@@ -217,8 +217,8 @@ export interface TanStackStartArgs extends SsrSiteArgs {
    *
    * ```ts title="sst.config.ts"
    * {
-   *   route: {
-   *     router,
+   *   router: {
+   *     instance: router,
    *     domain: "docs.example.com",
    *   },
    * }
@@ -228,7 +228,7 @@ export interface TanStackStartArgs extends SsrSiteArgs {
    * TanStack Start can only be routed from the root "/" and does not currently support base paths.
    * :::
    */
-  route?: SsrSiteArgs["route"];
+  router?: SsrSiteArgs["router"];
   /**
    * The command used internally to build your TanStack Start app.
    *
