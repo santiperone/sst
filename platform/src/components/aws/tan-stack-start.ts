@@ -8,10 +8,6 @@ export interface TanStackStartArgs extends SsrSiteArgs {
   /**
    * Configure how this component works in `sst dev`.
    *
-   * :::note
-   * In `sst dev` your TanStack Start app is run in dev mode; it's not deployed.
-   * :::
-   *
    * Instead of deploying your TanStack Start app, this starts it in dev mode. It's run
    * as a separate process in the `sst dev` multiplexer. Read more about
    * [`sst dev`](/docs/reference/cli/#dev).
@@ -362,7 +358,7 @@ export class TanStackStart extends SsrSite {
     super(__pulumiType, name, args, opts);
   }
 
-  protected normalizeBuildCommand() {}
+  protected normalizeBuildCommand() { }
 
   protected buildPlan(outputPath: Output<string>): Output<Plan> {
     return outputPath.apply((outputPath) => {

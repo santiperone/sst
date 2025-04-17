@@ -33,6 +33,7 @@ const sidebar = [
       { label: "Angular", slug: "docs/start/aws/angular" },
       { label: "Express", slug: "docs/start/aws/express" },
       { label: "Realtime", slug: "docs/start/aws/realtime" },
+      { label: "TanStack", slug: "docs/start/aws/tanstack" },
       {
         label: "Cloudflare",
         items: [
