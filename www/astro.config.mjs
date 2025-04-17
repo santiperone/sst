@@ -23,6 +23,7 @@ const sidebar = [
       { label: "Hono", slug: "docs/start/aws/hono" },
       { label: "Astro", slug: "docs/start/aws/astro" },
       { label: "Email", slug: "docs/start/aws/email" },
+      { label: "React", slug: "docs/start/aws/react" },
       { label: "Remix", slug: "docs/start/aws/remix" },
       { label: "Svelte", slug: "docs/start/aws/svelte" },
       { label: "Drizzle", slug: "docs/start/aws/drizzle" },
