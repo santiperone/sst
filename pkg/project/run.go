@@ -561,7 +561,12 @@ loop:
 		}
 	}
 
-	log.Info("done running stack command")
+	if input.Command == "remove" && len(complete.Resources) == 0 {
+		provider.Cleanup(p.home, p.app.Name, p.app.Stage)
+
+	}
+
+	log.Info("done running stack command", "resources", len(complete.Resources))
 	if cmd.ProcessState.ExitCode() > 0 {
 		return ErrStackRunFailed
 	}
