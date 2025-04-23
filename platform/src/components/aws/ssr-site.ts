@@ -122,49 +122,72 @@ export interface SsrSiteArgs extends BaseSsrSiteArgs {
   invalidation?: Input<
     | false
     | {
-        /**
-         * Configure if `sst deploy` should wait for the CloudFront cache invalidation to finish.
-         *
-         * :::tip
-         * For non-prod environments it might make sense to pass in `false`.
-         * :::
-         *
-         * Waiting for this process to finish ensures that new content will be available after the deploy finishes. However, this process can sometimes take more than 5 mins.
-         * @default `false`
-         * @example
-         * ```js
-         * {
-         *   invalidation: {
-         *     wait: true
-         *   }
-         * }
-         * ```
-         */
-        wait?: Input<boolean>;
-        /**
-         * The paths to invalidate.
-         *
-         * You can either pass in an array of glob patterns to invalidate specific files. Or you can use one of these built-in options:
-         * - `all`: All files will be invalidated when any file changes
-         * - `versioned`: Only versioned files will be invalidated when versioned files change
-         *
-         * :::note
-         * Each glob pattern counts as a single invalidation. However, invalidating `all` counts as a single invalidation as well.
-         * :::
-         * @default `"all"`
-         * @example
-         * Invalidate the `index.html` and all files under the `products/` route. This counts as two invalidations.
-         * ```js
-         * {
-         *   invalidation: {
-         *     paths: ["/index.html", "/products/*"]
-         *   }
-         * }
-         * ```
-         */
-        paths?: Input<"all" | "versioned" | string[]>;
-      }
+      /**
+       * Configure if `sst deploy` should wait for the CloudFront cache invalidation to finish.
+       *
+       * :::tip
+       * For non-prod environments it might make sense to pass in `false`.
+       * :::
+       *
+       * Waiting for this process to finish ensures that new content will be available after the deploy finishes. However, this process can sometimes take more than 5 mins.
+       * @default `false`
+       * @example
+       * ```js
+       * {
+       *   invalidation: {
+       *     wait: true
+       *   }
+       * }
+       * ```
+       */
+      wait?: Input<boolean>;
+      /**
+       * The paths to invalidate.
+       *
+       * You can either pass in an array of glob patterns to invalidate specific files. Or you can use one of these built-in options:
+       * - `all`: All files will be invalidated when any file changes
+       * - `versioned`: Only versioned files will be invalidated when versioned files change
+       *
+       * :::note
+       * Each glob pattern counts as a single invalidation. However, invalidating `all` counts as a single invalidation as well.
+       * :::
+       * @default `"all"`
+       * @example
+       * Invalidate the `index.html` and all files under the `products/` route. This counts as two invalidations.
+       * ```js
+       * {
+       *   invalidation: {
+       *     paths: ["/index.html", "/products/*"]
+       *   }
+       * }
+       * ```
+       */
+      paths?: Input<"all" | "versioned" | string[]>;
+    }
   >;
+  /**
+   * Regions that the server function will be deployed to.
+   *
+   * By default, the server function is deployed to a single region, this is the
+   * default region of your SST app.
+   *
+   * :::note
+   * This does not use Lambda@Edge, it deploys multiple Lambda functions instead.
+   * :::
+   *
+   * To deploy it to multiple regions, you can pass in a list of regions. And
+   * any requests made will be routed to the nearest region based on the user's
+   * location.
+   *
+   * @default The default region of the SST app
+   *
+   * @example
+   * ```js
+   * {
+   *   regions: ["us-east-1", "eu-west-1"]
+   * }
+   * ```
+   */
   regions?: Input<string[]>;
   permissions?: FunctionArgs["permissions"];
   /**
@@ -1112,11 +1135,11 @@ async function handler(event) {
         `  });`,
         ...(streaming
           ? [
-              `  const response = await p;`,
-              `  responseStream.write(JSON.stringify(response));`,
-              `  responseStream.end();`,
-              `  return;`,
-            ]
+            `  const response = await p;`,
+            `  responseStream.write(JSON.stringify(response));`,
+            `  responseStream.end();`,
+            `  return;`,
+          ]
           : [`  return p;`]),
         `}`,
       ].join("\n");
@@ -1153,13 +1176,13 @@ async function handler(event) {
               // versioned files
               ...(copy.versionedSubDir
                 ? [
-                    {
-                      files: path.posix.join(copy.versionedSubDir, "**"),
-                      cacheControl:
-                        assets?.versionedFilesCacheHeader ??
-                        `public,max-age=${versionedFilesTTL},immutable`,
-                    },
-                  ]
+                  {
+                    files: path.posix.join(copy.versionedSubDir, "**"),
+                    cacheControl:
+                      assets?.versionedFilesCacheHeader ??
+                      `public,max-age=${versionedFilesTTL},immutable`,
+                  },
+                ]
                 : []),
               ...(assets?.fileOptions ?? []),
             ];
@@ -1284,9 +1307,9 @@ async function handler(event) {
               },
               image: imageOptimizerUrl
                 ? {
-                    host: new URL(imageOptimizerUrl!).host,
-                    route: plan.imageOptimizer!.prefix,
-                  }
+                  host: new URL(imageOptimizerUrl!).host,
+                  route: plan.imageOptimizer!.prefix,
+                }
                 : undefined,
               servers: servers.map((s) => [
                 new URL(s.url).host,

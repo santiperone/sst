@@ -67,19 +67,6 @@ export interface ReactArgs extends SsrSiteArgs {
    */
   permissions?: SsrSiteArgs["permissions"];
   /**
-   * The regions that the [server function](#nodes-server) in your React app will be
-   * deployed to. Requests will be routed to the nearest region based on the user's location.
-   *
-   * @default The default region of the SST app
-   * @example
-   * ```js
-   * {
-   *   regions: ["us-east-1", "eu-west-1"]
-   * }
-   * ```
-   */
-  regions?: SsrSiteArgs["regions"];
-  /**
    * Path to the directory where your React app is located.  This path is relative to your `sst.config.ts`.
    *
    * By default it assumes your React app is in the root of your SST app.
@@ -398,7 +385,7 @@ export class React extends SsrSite {
     super(__pulumiType, name, args, opts);
   }
 
-  protected normalizeBuildCommand() {}
+  protected normalizeBuildCommand() { }
 
   protected buildPlan(outputPath: Output<string>): Output<Plan> {
     return output(outputPath).apply((outputPath) => {
@@ -416,7 +403,7 @@ export class React extends SsrSite {
           const content = fs.readFileSync(viteConfig, "utf-8");
           const match = content.match(/["']?base["']?:\s*["']([^"]+)["']/);
           return match ? match[1] : undefined;
-        } catch (e) {}
+        } catch (e) { }
       })();
 
       // Get base configured in react-router config ie. "/docs/"
@@ -426,7 +413,7 @@ export class React extends SsrSite {
           const content = fs.readFileSync(rrConfig, "utf-8");
           const match = content.match(/["']?basename["']?:\s*["']([^"]+)["']/);
           return match ? match[1] : undefined;
-        } catch (e) {}
+        } catch (e) { }
       })();
 
       if (viteBase) {
@@ -454,25 +441,25 @@ export class React extends SsrSite {
         base: reactRouterBase,
         server: serverPath
           ? (() => {
-              // React does perform their own internal ESBuild process, but it doesn't bundle
-              // 3rd party dependencies by default. In the interest of keeping deployments
-              // seamless for users we will create a server bundle with all dependencies included.
+            // React does perform their own internal ESBuild process, but it doesn't bundle
+            // 3rd party dependencies by default. In the interest of keeping deployments
+            // seamless for users we will create a server bundle with all dependencies included.
 
-              fs.copyFileSync(
-                path.join(
-                  $cli.paths.platform,
-                  "functions",
-                  "react-server",
-                  "server.mjs",
-                ),
-                path.join(outputPath, "build", "server.mjs"),
-              );
+            fs.copyFileSync(
+              path.join(
+                $cli.paths.platform,
+                "functions",
+                "react-server",
+                "server.mjs",
+              ),
+              path.join(outputPath, "build", "server.mjs"),
+            );
 
-              return {
-                handler: path.join(outputPath, "build", "server.handler"),
-                streaming: true,
-              };
-            })()
+            return {
+              handler: path.join(outputPath, "build", "server.handler"),
+              streaming: true,
+            };
+          })()
           : undefined,
         assets: [
           {

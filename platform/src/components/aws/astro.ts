@@ -36,7 +36,7 @@ export interface AstroArgs extends SsrSiteArgs {
    *     {
    *       actions: ["s3:GetObject", "s3:PutObject"],
    *       resources: ["arn:aws:s3:::my-bucket/*"]
-   *     },
+   *     }
    *   ]
    * }
    * ```
@@ -49,7 +49,7 @@ export interface AstroArgs extends SsrSiteArgs {
    *     {
    *       actions: ["s3:*"],
    *       resources: ["arn:aws:s3:::my-bucket/*"]
-   *     },
+   *     }
    *   ]
    * }
    * ```
@@ -62,25 +62,12 @@ export interface AstroArgs extends SsrSiteArgs {
    *     {
    *       actions: ["*"],
    *       resources: ["*"]
-   *     },
+   *     }
    *   ]
    * }
    * ```
    */
   permissions?: SsrSiteArgs["permissions"];
-  /**
-   * The regions that the [server function](#nodes-server) in your Astro site will be
-   * deployed to. Requests will be routed to the nearest region based on the user's location.
-   *
-   * @default The default region of the SST app
-   * @example
-   * ```js
-   * {
-   *   regions: ["us-east-1", "eu-west-1"]
-   * }
-   * ```
-   */
-  regions?: SsrSiteArgs["regions"];
   /**
    * Path to the directory where your Astro site is located.  This path is relative to your `sst.config.ts`.
    *
@@ -406,7 +393,7 @@ export class Astro extends SsrSite {
     super(__pulumiType, name, args, opts);
   }
 
-  protected normalizeBuildCommand() {}
+  protected normalizeBuildCommand() { }
 
   protected buildPlan(outputPath: Output<string>): Output<Plan> {
     return outputPath.apply((outputPath) => {
@@ -458,18 +445,18 @@ export class Astro extends SsrSite {
         server: isStatic
           ? undefined
           : {
-              handler: path.join(serverOutputPath, "entry.handler"),
-              nodejs: { install: ["sharp"] },
-              streaming: buildMeta.responseMode === "stream",
-              copyFiles: fs.existsSync(path.join(serverOutputPath, "404.html"))
-                ? [
-                    {
-                      from: path.join(serverOutputPath, "404.html"),
-                      to: "404.html",
-                    },
-                  ]
-                : [],
-            },
+            handler: path.join(serverOutputPath, "entry.handler"),
+            nodejs: { install: ["sharp"] },
+            streaming: buildMeta.responseMode === "stream",
+            copyFiles: fs.existsSync(path.join(serverOutputPath, "404.html"))
+              ? [
+                {
+                  from: path.join(serverOutputPath, "404.html"),
+                  to: "404.html",
+                },
+              ]
+              : [],
+          },
         assets: [
           {
             from: buildMeta.clientBuildOutputDir,
@@ -480,9 +467,9 @@ export class Astro extends SsrSite {
         ],
         custom404:
           isStatic &&
-          fs.existsSync(
-            path.join(outputPath, buildMeta.clientBuildOutputDir, "404.html"),
-          )
+            fs.existsSync(
+              path.join(outputPath, buildMeta.clientBuildOutputDir, "404.html"),
+            )
             ? "/404.html"
             : undefined,
       };

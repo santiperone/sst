@@ -754,59 +754,59 @@ export interface RouterArgs {
   invalidation?: Input<
     | boolean
     | {
-        /**
-         * Configure if `sst deploy` should wait for the CloudFront cache invalidation to finish.
-         *
-         * :::tip
-         * For non-prod environments it might make sense to pass in `false`.
-         * :::
-         *
-         * Waiting for this process to finish ensures that new content will be available after the deploy finishes. However, this process can sometimes take more than 5 mins.
-         * @default `false`
-         * @example
-         * ```js
-         * {
-         *   invalidation: {
-         *     wait: true
-         *   }
-         * }
-         * ```
-         */
-        wait?: Input<boolean>;
-        /**
-         * The invalidation token is used to determine if the cache should be invalidated. If the
-         * token is the same as the previous deployment, the cache will not be invalidated.
-         *
-         * @default A unique value is auto-generated on each deploy
-         * @example
-         * ```js
-         * {
-         *   invalidation: {
-         *     token: "foo123"
-         *   }
-         * }
-         * ```
-         */
-        token?: Input<string>;
-        /**
-         * Specify an array of glob pattern of paths to invalidate.
-         *
-         * :::note
-         * Each glob pattern counts as a single invalidation. However, invalidating `/*` counts as a single invalidation as well.
-         * :::
-         * @default `["/*"]`
-         * @example
-         * Invalidate the `index.html` and all files under the `products/` route. This counts as two invalidations.
-         * ```js
-         * {
-         *   invalidation: {
-         *     paths: ["/index.html", "/products/*"]
-         *   }
-         * }
-         * ```
-         */
-        paths?: Input<Input<string>[]>;
-      }
+      /**
+       * Configure if `sst deploy` should wait for the CloudFront cache invalidation to finish.
+       *
+       * :::tip
+       * For non-prod environments it might make sense to pass in `false`.
+       * :::
+       *
+       * Waiting for this process to finish ensures that new content will be available after the deploy finishes. However, this process can sometimes take more than 5 mins.
+       * @default `false`
+       * @example
+       * ```js
+       * {
+       *   invalidation: {
+       *     wait: true
+       *   }
+       * }
+       * ```
+       */
+      wait?: Input<boolean>;
+      /**
+       * The invalidation token is used to determine if the cache should be invalidated. If the
+       * token is the same as the previous deployment, the cache will not be invalidated.
+       *
+       * @default A unique value is auto-generated on each deploy
+       * @example
+       * ```js
+       * {
+       *   invalidation: {
+       *     token: "foo123"
+       *   }
+       * }
+       * ```
+       */
+      token?: Input<string>;
+      /**
+       * Specify an array of glob pattern of paths to invalidate.
+       *
+       * :::note
+       * Each glob pattern counts as a single invalidation. However, invalidating `/*` counts as a single invalidation as well.
+       * :::
+       * @default `["/*"]`
+       * @example
+       * Invalidate the `index.html` and all files under the `products/` route. This counts as two invalidations.
+       * ```js
+       * {
+       *   invalidation: {
+       *     paths: ["/index.html", "/products/*"]
+       *   }
+       * }
+       * ```
+       */
+      paths?: Input<Input<string>[]>;
+    }
   >;
 
   /**
@@ -1068,16 +1068,16 @@ export class Router extends Component implements Link.Linkable {
         path: string,
         config:
           | {
-              injection: string;
-              kvStore?: string;
-              kvStores?: string[];
-            }
+            injection: string;
+            kvStore?: string;
+            kvStores?: string[];
+          }
           | undefined,
         rewrite:
           | {
-              regex: string;
-              to: string;
-            }
+            regex: string;
+            to: string;
+          }
           | undefined,
         injectHostHeader: boolean,
       ) {
@@ -1090,18 +1090,16 @@ export class Router extends Component implements Link.Linkable {
               : config?.kvStores ?? [],
             code: `
 async function handler(event) {
-  ${
-    injectHostHeader
-      ? `event.request.headers["x-forwarded-host"] = event.request.headers.host;`
-      : ""
-  }
-  ${
-    rewrite
-      ? `
+  ${injectHostHeader
+                ? `event.request.headers["x-forwarded-host"] = event.request.headers.host;`
+                : ""
+              }
+  ${rewrite
+                ? `
 const re = new RegExp("${rewrite.regex}");
 event.request.uri = event.request.uri.replace(re, "${rewrite.to}");`
-      : ""
-  }
+                : ""
+              }
   ${config?.injection ?? ""}
   return event.request;
 }`,
@@ -1208,23 +1206,23 @@ async function handler(event) {
                         functionArn:
                           route.edge?.viewerRequest || route.rewrite
                             ? createCfRequestFunction(
-                                path,
-                                route.edge?.viewerRequest,
-                                route.rewrite,
-                                true,
-                              ).arn
+                              path,
+                              route.edge?.viewerRequest,
+                              route.rewrite,
+                              true,
+                            ).arn
                             : createCfRequestDefaultFunction().arn,
                       },
                       ...(route.edge?.viewerResponse
                         ? [
-                            {
-                              eventType: "viewer-response",
-                              functionArn: createCfResponseFunction(
-                                path,
-                                route.edge.viewerResponse,
-                              ).arn,
-                            },
-                          ]
+                          {
+                            eventType: "viewer-response",
+                            functionArn: createCfResponseFunction(
+                              path,
+                              route.edge.viewerResponse,
+                            ).arn,
+                          },
+                        ]
                         : []),
                     ],
                     viewerProtocolPolicy: "redirect-to-https",
@@ -1263,30 +1261,30 @@ async function handler(event) {
                     functionAssociations: [
                       ...(route.edge?.viewerRequest || route.rewrite
                         ? [
-                            {
-                              eventType: "viewer-request",
-                              functionArn:
-                                route.edge?.viewerRequest || route.rewrite
-                                  ? createCfRequestFunction(
-                                      path,
-                                      route.edge?.viewerRequest,
-                                      route.rewrite,
-                                      false,
-                                    ).arn
-                                  : createCfRequestDefaultFunction().arn,
-                            },
-                          ]
+                          {
+                            eventType: "viewer-request",
+                            functionArn:
+                              route.edge?.viewerRequest || route.rewrite
+                                ? createCfRequestFunction(
+                                  path,
+                                  route.edge?.viewerRequest,
+                                  route.rewrite,
+                                  false,
+                                ).arn
+                                : createCfRequestDefaultFunction().arn,
+                          },
+                        ]
                         : []),
                       ...(route.edge?.viewerResponse
                         ? [
-                            {
-                              eventType: "viewer-response",
-                              functionArn: createCfResponseFunction(
-                                path,
-                                route.edge.viewerResponse,
-                              ).arn,
-                            },
-                          ]
+                          {
+                            eventType: "viewer-response",
+                            functionArn: createCfResponseFunction(
+                              path,
+                              route.edge.viewerResponse,
+                            ).arn,
+                          },
+                        ]
                         : []),
                     ],
                     viewerProtocolPolicy: "redirect-to-https",
@@ -1441,7 +1439,7 @@ async function handler(event) {
         - First sort by host pattern (longest first)
         - Then sort by path prefix (longest first)
       */ ""
-      }
+                }
       .map(r => {
         var parts = r.split(",");
         return { 
@@ -1925,11 +1923,11 @@ async function routeSite(kvNamespace, metadata) {
   if (metadata.servers){
     event.request.headers["x-forwarded-host"] = event.request.headers.host;
     ${
-      // Note: In SvelteKit, form action requests contain "/" in request query string
-      //  ie. POST request with query string "?/action"
-      //  CloudFront does not allow query string with "/". It needs to be encoded.
-      ""
-    }
+  // Note: In SvelteKit, form action requests contain "/" in request query string
+  //  ie. POST request with query string "?/action"
+  //  CloudFront does not allow query string with "/". It needs to be encoded.
+  ""
+  }
     for (var key in event.request.querystring) {
       if (key.includes("/")) {
         event.request.querystring[encodeURIComponent(key)] = event.request.querystring[key];
@@ -1943,10 +1941,10 @@ async function routeSite(kvNamespace, metadata) {
 
   function setNextjsGeoHeaders() {
     ${
-      // Inject the CloudFront viewer country, region, latitude, and longitude headers into
-      // the request headers for OpenNext to use them for OpenNext to use them
-      ""
-    }
+  // Inject the CloudFront viewer country, region, latitude, and longitude headers into
+  // the request headers for OpenNext to use them for OpenNext to use them
+  ""
+  }
     if(event.request.headers["cloudfront-viewer-city"]) {
       event.request.headers["x-open-next-city"] = event.request.headers["cloudfront-viewer-city"];
     }
@@ -1966,11 +1964,11 @@ async function routeSite(kvNamespace, metadata) {
 
   function setNextjsCacheKey() {
     ${
-      // This function is used to improve cache hit ratio by setting the cache key
-      // based on the request headers and the path. `next/image` only needs the
-      // accept header, and this header is not useful for the rest of the query
-      ""
-    }
+  // This function is used to improve cache hit ratio by setting the cache key
+  // based on the request headers and the path. `next/image` only needs the
+  // accept header, and this header is not useful for the rest of the query
+  ""
+  }
     var cacheKey = "";
     if (event.request.uri.startsWith("/_next/image")) {
       cacheKey = getHeader("accept");
@@ -2105,7 +2103,7 @@ export type KV_SITE_METADATA = {
 
 export type RouterRouteArgs = {
   /**
-   * The `Router` component to use to route requests.
+   * The `Router` component to use for routing requests.
    *
    * @example
    *
@@ -2113,53 +2111,56 @@ export type RouterRouteArgs = {
    *
    * ```ts title="sst.config.ts"
    * const router = new sst.aws.Router("MyRouter", {
-   *   domain: "example.com",
+   *   domain: "example.com"
    * });
    * ```
    *
-   * Attach to the Router to receive requests.
+   * You can attach it to the Router, instead of creating a standalone CloudFront
+   * distribution.
    *
-   * ```ts title="sst.config.ts"
+   * ```ts
    * router: {
-   *   instance: router,
+   *   instance: router
    * }
    * ```
    */
   instance: Input<Router>;
   /**
-   * Route requests matching specific domain pattern.
+   * Route requests matching a specific domain pattern.
    *
    * @example
    *
    * You can serve your resource from a subdomain. For example, if you want to make
-   * it available at `https://dev.example.com`, set the `Router` domain to a wildcard.
+   * it available at `https://dev.example.com`, set the `Router` to match the
+   * domain or a wildcard.
    *
    * ```ts {2} title="sst.config.ts"
    * const router = new sst.aws.Router("MyRouter", {
-   *   domain: "*.example.com",
+   *   domain: "*.example.com"
    * });
    * ```
    *
    * Then set the domain pattern.
    *
-   * ```ts {3} title="sst.config.ts"
+   * ```ts {3}
    * router: {
    *   instance: router,
-   *   domain: "dev.example.com",
+   *   domain: "dev.example.com"
    * }
    * ```
    */
   domain?: Input<string>;
   /**
-   * Route request smatching specific path prefix.
+   * Route requests matching a specific path prefix.
    *
    * @default `"/"`
+   *
    * @example
    *
-   * ```ts {3} title="sst.config.ts"
+   * ```ts {3}
    * router: {
    *   instance: router,
-   *   path: "/docs",
+   *   path: "/docs"
    * }
    * ```
    */
@@ -2195,8 +2196,8 @@ export function normalizeRouteArgs(
       return {
         hostPattern: v.domain
           ? v.domain
-              .replace(/[.+?^${}()|[\]\\]/g, "\\$&") // Escape special regex chars
-              .replace(/\*/g, ".*") // Replace * with .*
+            .replace(/[.+?^${}()|[\]\\]/g, "\\$&") // Escape special regex chars
+            .replace(/\*/g, ".*") // Replace * with .*
           : undefined,
         pathPrefix,
         routerDistributionId: v.instance.nodes.cdn.nodes.distribution.id,

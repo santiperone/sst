@@ -64,18 +64,6 @@ export interface TanStackStartArgs extends SsrSiteArgs {
    */
   permissions?: SsrSiteArgs["permissions"];
   /**
-   * The regions that the [server function](#nodes-server) in your TanStack Start app will be deployed to. Requests will be routed to the nearest region based on the user's location.
-   *
-   * @default The default region of the SST app
-   * @example
-   * ```js
-   * {
-   *   regions: ["us-east-1", "eu-west-1"]
-   * }
-   * ```
-   */
-  regions?: SsrSiteArgs["regions"];
-  /**
    * Path to the directory where your TanStack Start app is located.  This path is relative to your `sst.config.ts`.
    *
    * By default it assumes your TanStack Start app is in the root of your SST app.
