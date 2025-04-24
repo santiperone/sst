@@ -182,35 +182,40 @@ export interface TanStackStartArgs extends SsrSiteArgs {
    */
   domain?: SsrSiteArgs["domain"];
   /**
-   * Serve your TanStack Start app through a `Router` component instead of a standalone CloudFront
+   * Serve your TanStack Start app through a `Router` instead of a standalone CloudFront
    * distribution.
    *
-   * Let's say you have a Router component.
+   * By default, this component creates a new CloudFront distribution. But you might
+   * want to serve it through the distribution of your `Router`.
+   * 
+   * :::note
+   * TanStack Start does not currently support base paths and can only be routed
+   * from the root `/` path.
+   * :::
    *
-   * ```ts title="sst.config.ts"
+   * To serve your TanStack Start app **from a subdomain**, you'll need to
+   * configure the domain in your `Router` component to match both the root and the
+   * subdomain.
+   *
+   * ```ts title="sst.config.ts" {3,4}
    * const router = new sst.aws.Router("Router", {
-   *   domain: "*.example.com",
+   *   domain: {
+   *     name: "example.com",
+   *     aliases: ["*.example.com"]
+   *   }
    * });
    * ```
    *
-   * You can then match a pattern and route to your app based on:
+   * Now set the `domain` in the `router` prop.
    *
-   * - A domain pattern like `docs.example.com`
-   *
-   * For example, to match a domain.
-   *
-   * ```ts title="sst.config.ts"
+   * ```ts {4}
    * {
    *   router: {
    *     instance: router,
-   *     domain: "docs.example.com",
-   *   },
+   *     domain: "docs.example.com"
+   *   }
    * }
    * ```
-   *
-   * :::caution
-   * TanStack Start can only be routed from the root "/" and does not currently support base paths.
-   * :::
    */
   router?: SsrSiteArgs["router"];
   /**
