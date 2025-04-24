@@ -220,7 +220,7 @@ interface InlineBaseRouteArgs {
        */
       injection: Input<string>;
       /**
-       * The KV store to associate with the viewer request function.
+       * The KeyValueStore to associate with the viewer request function.
        *
        * @example
        * ```js
@@ -240,7 +240,7 @@ interface InlineBaseRouteArgs {
        */
       kvStore?: Input<string>;
       /**
-       * @deprecated Use `kvStore` instead because CloudFront Functions only support one KV store.
+       * @deprecated Use `kvStore` instead because CloudFront Functions only support one KeyValueStore.
        */
       kvStores?: Input<Input<string>[]>;
     }>;
@@ -306,7 +306,7 @@ interface InlineBaseRouteArgs {
        */
       injection: Input<string>;
       /**
-       * The KV store to associate with the viewer response function.
+       * The KeyValueStore to associate with the viewer response function.
        *
        * @example
        * ```js
@@ -326,7 +326,7 @@ interface InlineBaseRouteArgs {
        */
       kvStore?: Input<string>;
       /**
-       * @deprecated Use `kvStore` instead because CloudFront Functions only support one KV store.
+       * @deprecated Use `kvStore` instead because CloudFront Functions only support one KeyValueStore.
        */
       kvStores?: Input<Input<string>[]>;
     }>;
@@ -667,7 +667,7 @@ export interface RouterArgs {
        */
       injection: Input<string>;
       /**
-       * The KV store to associate with the viewer request function.
+       * The KeyValueStore to associate with the viewer request function.
        *
        * @example
        * ```js
@@ -719,7 +719,7 @@ export interface RouterArgs {
        */
       injection: Input<string>;
       /**
-       * The KV store to associate with the viewer response function.
+       * The KeyValueStore to associate with the viewer response function.
        *
        * @example
        * ```js
@@ -848,13 +848,6 @@ interface RouterRef {
  * - A frontend
  * - An S3 bucket
  *
- * This uses a CloudFront KV store to store the routing data and a CloudFront
- * function to route the request. So when a request comes in, it does a lookup in
- * the store and dynamically sets the origin based on the routing data.
- *
- * You might notice a _placeholder.sst.dev_ behavior in CloudFront. This is not
- * used and is only there because CloudFront requires a default behavior.
- *
  * @example
  *
  * #### Minimal example
@@ -869,6 +862,19 @@ interface RouterRef {
  * new sst.aws.Router("MyRouter", {
  *   domain: "myapp.com"
  * });
+ * ```
+ *
+ * #### Sharing the router across stages
+ *
+ * ```ts title="sst.config.ts"
+ * const router = $app.stage === "production"
+ *   ? new sst.aws.Router("MyRouter", {
+ *       domain: {
+ *         name: "example.com",
+ *         aliases: ["*.example.com"]
+ *       }
+ *     })
+ *   : sst.aws.Router.get("MyRouter", "E1XWRGCYGTFB7Z");
  * ```
  *
  * #### Route to a URL
@@ -964,6 +970,31 @@ interface RouterRef {
  * ```
  *
  * We configure `*.example.com` as an alias so that we can route to a subdomain.
+ *
+ * #### How it works
+ *
+ * This uses a CloudFront KeyValueStore to store the routing data and a CloudFront
+ * function to route the request. As routes are added, the store is updated.
+ *
+ * So when a request comes in, it does a lookup in the store and dynamically sets
+ * the origin based on the routing data. For frontends, that have their server
+ * functions deployed to multiple `regions`, it routes to the closest region based
+ * on the user's location.
+ *
+ * You might notice a _placeholder.sst.dev_ behavior in CloudFront. This is not
+ * used and is only there because CloudFront requires a default behavior.
+ *
+ * #### Limits
+ *
+ * There are some limits on this setup but it's managed by SST.
+ *
+ * - The CloudFront function can be a maximum of 10KB in size. But because all
+ *   the route data is stored in the KeyValueStore, the function can be kept small.
+ * - Each value in the KeyValueStore needs to be less than 1KB. This component
+ *   splits the routes into multiple values to keep it under the limit.
+ * - The KeyValueStore can be a maximum of 5MB. This is fairly large. But to
+ *   handle sites that have a lot of files, only top-level assets get individual
+ *   entries.
  */
 export class Router extends Component implements Link.Linkable {
   private constructorName: string;
