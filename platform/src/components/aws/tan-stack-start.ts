@@ -3,6 +3,8 @@ import path from "path";
 import { ComponentResourceOptions, Output } from "@pulumi/pulumi";
 import { VisibleError } from "../error.js";
 import { Plan, SsrSite, SsrSiteArgs } from "./ssr-site.js";
+import { RouterRouteArgs } from "./router.js";
+import { Prettify } from "../component.js";
 
 export interface TanStackStartArgs extends SsrSiteArgs {
   /**
@@ -187,7 +189,7 @@ export interface TanStackStartArgs extends SsrSiteArgs {
    *
    * By default, this component creates a new CloudFront distribution. But you might
    * want to serve it through the distribution of your `Router`.
-   * 
+   *
    * :::note
    * TanStack Start does not currently support base paths and can only be routed
    * from the root `/` path.
@@ -217,7 +219,7 @@ export interface TanStackStartArgs extends SsrSiteArgs {
    * }
    * ```
    */
-  router?: Omit<SsrSiteArgs["router"], "path">;
+  router?: Prettify<Omit<RouterRouteArgs, "path">>;
   /**
    * The command used internally to build your TanStack Start app.
    *
@@ -351,7 +353,7 @@ export class TanStackStart extends SsrSite {
     super(__pulumiType, name, args, opts);
   }
 
-  protected normalizeBuildCommand() { }
+  protected normalizeBuildCommand() {}
 
   protected buildPlan(outputPath: Output<string>): Output<Plan> {
     return outputPath.apply((outputPath) => {
