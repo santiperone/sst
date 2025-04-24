@@ -30,6 +30,7 @@ export default $config({
     //const task = addTask();
     //const postgres = addAuroraPostgres();
     //const postgres = addPostgres();
+    //const mysql = addMysql();
     //const redis = addRedis();
     //const cron = addCron();
     //const topic = addTopic();
@@ -475,6 +476,29 @@ export default $config({
       ret.pgUsername = postgres.username;
       ret.pgPassword = postgres.password;
       return postgres;
+    }
+
+    function addMysql() {
+      const mysql = new sst.aws.Mysql("MyMysql", {
+        vpc,
+        dev: {
+          username: "root",
+          password: "password",
+          database: "local",
+          port: 3306,
+        },
+      });
+      new sst.aws.Function("MyMysqlApp", {
+        handler: "functions/mysql/index.handler",
+        url: true,
+        vpc,
+        link: [mysql],
+      });
+      ret.mysqlHost = mysql.host;
+      ret.mysqlPort = $interpolate`${mysql.port}`;
+      ret.mysqlUsername = mysql.username;
+      ret.mysqlPassword = mysql.password;
+      return mysql;
     }
 
     function addRedis() {
