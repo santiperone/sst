@@ -217,7 +217,7 @@ export interface TanStackStartArgs extends SsrSiteArgs {
    * }
    * ```
    */
-  router?: SsrSiteArgs["router"];
+  router?: Omit<SsrSiteArgs["router"], "path">;
   /**
    * The command used internally to build your TanStack Start app.
    *

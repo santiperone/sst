@@ -398,72 +398,105 @@ export interface StaticSiteArgs extends BaseStaticSiteArgs {
    */
   route?: Prettify<RouterRouteArgsDeprecated>;
   /**
-   * Serve your site through a `Router` component instead of a standalone CloudFront
+   * Serve your static site through a `Router` instead of a standalone CloudFront
    * distribution.
    *
-   * Let's say you have a Router component.
-   *
-   * ```ts title="sst.config.ts"
-   * const router = new sst.aws.Router("Router", {
-   *   domain: "*.example.com",
-   * });
-   * ```
-   *
-   * You can then match a pattern and route to your app based on:
+   * By default, this component creates a new CloudFront distribution. But you might
+   * want to serve it through the distribution of your `Router` as a:
    *
    * - A path like `/docs`
-   * - A domain pattern like `docs.example.com`
-   * - A combined pattern like `dev.example.com/docs`
+   * - A subdomain like `docs.example.com`
+   * - Or a combined pattern like `dev.example.com/docs`
    *
-   * For example, to match a path.
+   * @example
    *
-   * ```ts title="sst.config.ts"
-   * {
-   *   router: {
-   *     instance: router,
-   *     path: "/docs",
-   *   },
-   * }
-   * ```
+   * To serve your static site **from a path**, you'll need to configure the root domain
+   * in your `Router` component.
    *
-   * Or match a domain.
-   *
-   * ```ts title="sst.config.ts"
-   * {
-   *   router: {
-   *     instance: router,
-   *     domain: "docs.example.com",
-   *   },
-   * }
-   * ```
-   *
-   * Route by both domain and path:
-   *
-   * ```ts title="sst.config.ts"
-   * {
-   *   router: {
-   *     instance: router,
-   *     domain: "dev.example.com",
-   *     path: "/docs",
-   *   },
-   * }
-   * ```
-   *
-   * If you are using site generator like Vite, first make sure the base path is set in
-   * your static site generator.
-   *
-   * For Vite, set the `base` option in your `vite.config.ts`. The value should end with
-   * `/`. This is to ensure the asset paths (ie. .css, .js) are correctly constructed.
-   * ```js {2} title="vite.config.ts"
-   * export default defineConfig({
-   *   base: "/docs/",
+   * ```ts title="sst.config.ts" {2}
+   * const router = new sst.aws.Router("Router", {
+   *   domain: "example.com"
    * });
    * ```
+   *
+   * Now set the `router` and the `path`.
+   *
+   * ```ts {3,4}
+   * {
+   *   router: {
+   *     instance: router,
+   *     path: "/docs"
+   *   }
+   * }
+   * ```
+   *
+   * If you are using a static site generator make sure the base path is set in your
+   * config.
    *
    * :::caution
    * If routing to a path, you need to configure that as the base path in your
    * static site generator as well.
    * :::
+   *
+   * For Vite, set the `base` option in your `vite.config.ts`. It should end with
+   * a `/` to ensure asset paths like CSS and JS, are constructed correctly.
+   * 
+   * ```js title="vite.config.ts" {2}
+   * export default defineConfig({
+   *   base: "/docs/"
+   * });
+   * ```
+   *
+   * To serve your static site **from a subdomain**, you'll need to configure the
+   * domain in your `Router` component to match both the root and the subdomain.
+   *
+   * ```ts title="sst.config.ts" {3,4}
+   * const router = new sst.aws.Router("Router", {
+   *   domain: {
+   *     name: "example.com",
+   *     aliases: ["*.example.com"]
+   *   }
+   * });
+   * ```
+   *
+   * Now set the `domain` in the `router` prop.
+   *
+   * ```ts {4}
+   * {
+   *   router: {
+   *     instance: router,
+   *     domain: "docs.example.com"
+   *   }
+   * }
+   * ```
+   *
+   * Finally, to serve your static site **from a combined pattern** like
+   * `dev.example.com/docs`, you'll need to configure the domain in your `Router` to
+   * match the subdomain.
+   *
+   * ```ts title="sst.config.ts" {3,4}
+   * const router = new sst.aws.Router("Router", {
+   *   domain: {
+   *     name: "example.com",
+   *     aliases: ["*.example.com"]
+   *   }
+   * });
+   * ```
+   *
+   * And set the `domain` and the `path`.
+   *
+   * ```ts {4,5}
+   * {
+   *   router: {
+   *     instance: router,
+   *     domain: "dev.example.com",
+   *     path: "/docs"
+   *   }
+   * }
+   * ```
+   *
+   * Also, make sure to set the base path in your static site generator
+   * configuration, like above.
    */
   router?: Prettify<RouterRouteArgs>;
   /**
@@ -492,46 +525,46 @@ export interface StaticSiteArgs extends BaseStaticSiteArgs {
   invalidation?: Input<
     | false
     | {
-        /**
-         * Configure if `sst deploy` should wait for the CloudFront cache invalidation to finish.
-         *
-         * :::tip
-         * For non-prod environments it might make sense to pass in `false`.
-         * :::
-         *
-         * Waiting for the CloudFront cache invalidation process to finish ensures that the new content will be served once the deploy finishes. However, this process can sometimes take more than 5 mins.
-         * @default `false`
-         * @example
-         * ```js
-         * {
-         *   invalidation: {
-         *     wait: true
-         *   }
-         * }
-         * ```
-         */
-        wait?: Input<boolean>;
-        /**
-         * The paths to invalidate.
-         *
-         * You can either pass in an array of glob patterns to invalidate specific files. Or you can use the built-in option `all` to invalidation all files when any file changes.
-         *
-         * :::note
-         * Invalidating `all` counts as one invalidation, while each glob pattern counts as a single invalidation path.
-         * :::
-         * @default `"all"`
-         * @example
-         * Invalidate the `index.html` and all files under the `products/` route.
-         * ```js
-         * {
-         *   invalidation: {
-         *     paths: ["/index.html", "/products/*"]
-         *   }
-         * }
-         * ```
-         */
-        paths?: Input<"all" | string[]>;
-      }
+      /**
+       * Configure if `sst deploy` should wait for the CloudFront cache invalidation to finish.
+       *
+       * :::tip
+       * For non-prod environments it might make sense to pass in `false`.
+       * :::
+       *
+       * Waiting for the CloudFront cache invalidation process to finish ensures that the new content will be served once the deploy finishes. However, this process can sometimes take more than 5 mins.
+       * @default `false`
+       * @example
+       * ```js
+       * {
+       *   invalidation: {
+       *     wait: true
+       *   }
+       * }
+       * ```
+       */
+      wait?: Input<boolean>;
+      /**
+       * The paths to invalidate.
+       *
+       * You can either pass in an array of glob patterns to invalidate specific files. Or you can use the built-in option `all` to invalidation all files when any file changes.
+       *
+       * :::note
+       * Invalidating `all` counts as one invalidation, while each glob pattern counts as a single invalidation path.
+       * :::
+       * @default `"all"`
+       * @example
+       * Invalidate the `index.html` and all files under the `products/` route.
+       * ```js
+       * {
+       *   invalidation: {
+       *     paths: ["/index.html", "/products/*"]
+       *   }
+       * }
+       * ```
+       */
+      paths?: Input<"all" | string[]>;
+    }
   >;
   /**
    * @deprecated The `route.path` prop is now the recommended way to configure the base
@@ -843,17 +876,17 @@ export class StaticSite extends Component implements Link.Linkable {
         // remove leading and trailing slashes from the path
         path: args.assets?.path
           ? output(args.assets?.path).apply((v) =>
-              v.replace(/^\//, "").replace(/\/$/, ""),
-            )
+            v.replace(/^\//, "").replace(/\/$/, ""),
+          )
           : undefined,
         purge: output(args.assets?.purge ?? true),
         // normalize to /path format
         routes: args.assets?.routes
           ? output(args.assets?.routes).apply((v) =>
-              v.map(
-                (route) => "/" + route.replace(/^\//, "").replace(/\/$/, ""),
-              ),
-            )
+            v.map(
+              (route) => "/" + route.replace(/^\//, "").replace(/\/$/, ""),
+            ),
+          )
           : [],
       };
     }
@@ -875,8 +908,8 @@ export class StaticSite extends Component implements Link.Linkable {
       const s3Bucket = bucket
         ? bucket.nodes.bucket
         : s3.BucketV2.get(`${name}Assets`, assets.bucket!, undefined, {
-            parent: self,
-          });
+          parent: self,
+        });
 
       return {
         bucketName: s3Bucket.bucket,
