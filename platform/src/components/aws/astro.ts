@@ -190,76 +190,104 @@ export interface AstroArgs extends SsrSiteArgs {
    */
   domain?: SsrSiteArgs["domain"];
   /**
-   * Serve your Astro site through a `Router` component instead of a standalone CloudFront
+   * Serve your Astro site through a `Router` instead of a standalone CloudFront
    * distribution.
    *
-   * Let's say you have a Router component.
+   * By default, this component creates a new CloudFront distribution. But you might
+   * want to serve it through the distribution of your `Router` as a:
    *
-   * ```ts title="sst.config.ts"
+   * - A path like `/docs`
+   * - A subdomain like `docs.example.com`
+   * - Or a combined pattern like `dev.example.com/docs`
+   *
+   * @example
+   *
+   * To serve your Astro site **from a path**, you'll need to configure the root domain
+   * in your `Router` component.
+   *
+   * ```ts title="sst.config.ts" {2}
    * const router = new sst.aws.Router("Router", {
-   *   domain: "*.example.com",
+   *   domain: "example.com"
    * });
    * ```
    *
-   * You can then match a pattern and route to your site based on:
+   * Now set the `router` and the `path`.
    *
-   * - A path like `/docs`
-   * - A domain pattern like `docs.example.com`
-   * - A combined pattern like `dev.example.com/docs`
-   *
-   * For example, to match a path.
-   *
-   * ```ts title="sst.config.ts"
+   * ```ts {3,4}
    * {
    *   router: {
    *     instance: router,
-   *     path: "/docs",
-   *   },
+   *     path: "/docs"
+   *   }
    * }
    * ```
    *
-   * Or match a domain.
-   *
-   * ```ts title="sst.config.ts"
-   * {
-   *   router: {
-   *     instance: router,
-   *     domain: "docs.example.com",
-   *   },
-   * }
-   * ```
-   *
-   * Route by both domain and path:
-   *
-   * ```ts title="sst.config.ts"
-   * {
-   *   router: {
-   *     instance: router,
-   *     domain: "dev.example.com",
-   *     path: "/docs",
-   *   },
-   * }
-   * ```
-   *
-   * If you are routing to a path like `/docs`, you must configure the
-   * base path in your Astro site. The base path must match the path in your
-   * route prop.
+   * You also need to set the
+   * [`base`](https://docs.astro.build/en/reference/configuration-reference/#base)
+   * in your `astro.config.mjs`.
    *
    * :::caution
-   * If routing to a path, you need to configure that as the base path in your
-   * Astro site as well.
+   * If routing to a path, you need to set that as the base path in your Astro
+   * site as well.
    * :::
    *
-   * For example, if you are routing `/docs` to an Astro site, you need to set
-   * [`base`](https://docs.astro.build/en/reference/configuration-reference/#base)
-   * to `/docs` in your `astro.config.mjs`.
-   *
-   * ```js {3} title="astro.config.mjs"
+   * ```js title="astro.config.mjs" {3}
    * export default defineConfig({
    *   adapter: sst(),
    *   base: "/docs"
    * });
    * ```
+   *
+   * To serve your Astro site **from a subdomain**, you'll need to configure the
+   * domain in your `Router` component to match both the root and the subdomain.
+   *
+   * ```ts title="sst.config.ts" {3,4}
+   * const router = new sst.aws.Router("Router", {
+   *   domain: {
+   *     name: "example.com",
+   *     aliases: ["*.example.com"]
+   *   }
+   * });
+   * ```
+   *
+   * Now set the `domain` in the `router` prop.
+   *
+   * ```ts {4}
+   * {
+   *   router: {
+   *     instance: router,
+   *     domain: "docs.example.com"
+   *   }
+   * }
+   * ```
+   *
+   * Finally, to serve your Astro site **from a combined pattern** like
+   * `dev.example.com/docs`, you'll need to configure the domain in your `Router` to
+   * match the subdomain.
+   *
+   * ```ts title="sst.config.ts" {3,4}
+   * const router = new sst.aws.Router("Router", {
+   *   domain: {
+   *     name: "example.com",
+   *     aliases: ["*.example.com"]
+   *   }
+   * });
+   * ```
+   *
+   * And set the `domain` and the `path`.
+   *
+   * ```ts {4,5}
+   * {
+   *   router: {
+   *     instance: router,
+   *     domain: "dev.example.com",
+   *     path: "/docs"
+   *   }
+   * }
+   * ```
+   *
+   * Also, make sure to set this as the `base` in your `astro.config.mjs`, like
+   * above.
    */
   router?: SsrSiteArgs["router"];
   /**

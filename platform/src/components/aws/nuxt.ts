@@ -285,7 +285,7 @@ export interface NuxtArgs extends SsrSiteArgs {
    *
    * Now set the `router` and the `path`.
    *
-   * ```ts title="sst.config.ts" {3,4}
+   * ```ts {3,4}
    * {
    *   router: {
    *     instance: router,
@@ -325,7 +325,7 @@ export interface NuxtArgs extends SsrSiteArgs {
    *
    * Now set the `domain` in the `router` prop.
    *
-   * ```ts title="sst.config.ts" {4}
+   * ```ts {4}
    * {
    *   router: {
    *     instance: router,
@@ -349,7 +349,7 @@ export interface NuxtArgs extends SsrSiteArgs {
    *
    * And set the `domain` and the `path`.
    *
-   * ```ts title="sst.config.ts" {4,5}
+   * ```ts {4,5}
    * {
    *   router: {
    *     instance: router,
