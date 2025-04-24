@@ -389,7 +389,7 @@ interface MysqlRef {
  * docker run \
  *   --rm \
  *   -p 3306:3306 \
- *   -v $(pwd)/.sst/storage/mysql:/var/lib/mysql \
+ *   -v $(pwd)/.sst/storage/mysql:/var/lib/mysql/data \
  *   -e MYSQL_DATABASE=local \
  *   -e MYSQL_ROOT_PASSWORD=password \
  *   mysql:8.0
