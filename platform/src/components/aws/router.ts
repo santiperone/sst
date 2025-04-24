@@ -841,29 +841,26 @@ interface RouterRef {
 
 /**
  * The `Router` component lets you use a CloudFront distribution to direct
- * requests to various parts of your application.
+ * requests to various parts of your application like:
  *
- * #### How it works
+ * - A URL
+ * - A function
+ * - A frontend
+ * - An S3 bucket
  *
- * Behind the scenes, this uses:
+ * This uses a CloudFront KV store to store the routing data and a CloudFront
+ * function to route the request. So when a request comes in, it does a lookup in
+ * the store and dynamically sets the origin based on the routing data.
  *
- * - The default CloudFront distribution behavior
- * - A CloudFront function for routing
- * - And a KV store to store the routing data
- *
- * When a request comes in, it does a lookup in the KV store and dynamically sets
- * the origin based on the routing data.
- *
- * You might notices a _placeholder.sst.dev_ behavior in CloudFront. This is not
- * used and is only there because CloudFront requires a behavior to exist.
+ * You might notice a _placeholder.sst.dev_ behavior in CloudFront. This is not
+ * used and is only there because CloudFront requires a default behavior.
  *
  * @example
  *
  * #### Minimal example
  *
  * ```ts title="sst.config.ts"
- * const router = new sst.aws.Router("MyRouter");
- * router.route("/", "https://some-external-service.com");
+ * new sst.aws.Router("MyRouter");
  * ```
  *
  * #### Add a custom domain
@@ -874,22 +871,17 @@ interface RouterRef {
  * });
  * ```
  *
- * #### Route to a function URL
+ * #### Route to a URL
  *
- * ```ts title="sst.config.ts"
- * const myFunction = new sst.aws.Function("MyFunction", {
- *   handler: "src/api.handler",
- *   url: true,
- * });
+ * ```ts title="sst.config.ts" {3}
+ * const router = new sst.aws.Router("MyRouter");
  *
- * const router = new sst.aws.Router("MyRouter", {
- * });
- * router.route("/", myFunction.url);
+ * router.route("/", "https://some-external-service.com");
  * ```
  *
- * #### Route to a bucket
+ * #### Route to an S3 bucket
  *
- * ```ts title="sst.config.ts" {2}
+ * ```ts title="sst.config.ts" {2,6}
  * const myBucket = new sst.aws.Bucket("MyBucket", {
  *   access: "cloudfront"
  * });
@@ -898,37 +890,80 @@ interface RouterRef {
  * router.routeBucket("/files", myBucket);
  * ```
  *
- * Make sure to allow CloudFront access to the bucket by setting the `access` prop on the bucket.
+ * You need to allow CloudFront to access the bucket by setting the `access` prop
+ * on the bucket.
+ *
+ * #### Route to a function
+ *
+ * ```ts title="sst.config.ts" {8-11}
+ * const router = new sst.aws.Router("MyRouter", {
+ *   domain: "example.com"
+ * });
+ *
+ * const myFunction = new sst.aws.Function("MyFunction", {
+ *   handler: "src/api.handler",
+ *   url: {
+ *     router: {
+ *       instance: router,
+ *       path: "/api"
+ *     }
+ *   }
+ * });
+ * ```
+ *
+ * Setting the route through the function, instead of `router.route()` makes
+ * it so that `myFunction.url` gives you the URL based on the Router domain.
  *
  * #### Route to a frontend
  *
- * ```ts title="sst.config.ts"
+ * ```ts title="sst.config.ts" {4-6}
  * const router = new sst.aws.Router("MyRouter");
  *
- * new sst.aws.Nextjs("Site", {
+ * const mySite = new sst.aws.Nextjs("MyWeb", {
  *   router: {
- *     instance: router,
- *   },
+ *     instance: router
+ *   }
  * });
  * ```
  *
- * #### Route to a frontend on a subpath
+ * Setting the route through the site, instead of `router.route()` makes
+ * it so that `mySite.url` gives you the URL based on the Router domain.
  *
- * ```ts title="sst.config.ts"
+ * #### Route to a frontend on a path
+ *
+ * ```ts title="sst.config.ts" {4-7}
  * const router = new sst.aws.Router("MyRouter");
  *
- * new sst.aws.Nextjs("Site", {
+ * new sst.aws.Nextjs("MyWeb", {
  *   router: {
  *     instance: router,
  *     path: "/docs"
- *   },
+ *   }
  * });
  * ```
  *
- * :::caution
- * If routing to a path, you need to configure that as the base path in your
- * frontend app as well.
- * :::
+ * If you are routing to a path, you'll need to configure the base path in your
+ * frontend app as well. [Learn more](/docs/component/aws/nextjs/#router).
+ *
+ * #### Route to a frontend on a subdomain
+ *
+ * ```ts title="sst.config.ts" {4,9-12}
+ * const router = new sst.aws.Router("MyRouter", {
+ *   domain: {
+ *     name: "example.com",
+ *     aliases: ["*.example.com"]
+ *   }
+ * });
+ *
+ * new sst.aws.Nextjs("MyWeb", {
+ *   router: {
+ *     instance: router,
+ *     domain: "docs.example.com"
+ *   }
+ * });
+ * ```
+ *
+ * We configure `*.example.com` as an alias so that we can route to a subdomain.
  */
 export class Router extends Component implements Link.Linkable {
   private constructorName: string;
