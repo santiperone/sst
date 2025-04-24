@@ -14,20 +14,18 @@ import { RandomPassword } from "@pulumi/random";
 import { Vpc } from "./vpc";
 import { Vpc as VpcV1 } from "./vpc-v1";
 import { VisibleError } from "../error";
-import { Postgres as PostgresV1 } from "./postgres-v1";
 import { SizeGbTb, toGBs } from "../size";
 import { DevCommand } from "../experimental/dev-command.js";
 import { RdsRoleLookup } from "./providers/rds-role-lookup";
-export type { PostgresArgs as PostgresV1Args } from "./postgres-v1";
 
-export interface PostgresArgs {
+export interface MysqlArgs {
   /**
-   * The Postgres engine version. Check out the [available versions in your region](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.Concepts.General.DBVersions.html).
-   * @default `"16.4"`
+   * The MySQL engine version. Check out the [available versions in your region](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/MySQL.Concepts.VersionMgmt.html).
+   * @default `"8.0.40"`
    * @example
    * ```js
    * {
-   *   version: "17.2"
+   *   version: "8.4.4"
    * }
    * ```
    */
@@ -39,7 +37,7 @@ export interface PostgresArgs {
    * Changing the username will cause the database to be destroyed and recreated.
    * :::
    *
-   * @default `"postgres"`
+   * @default `"root"`
    * @example
    * ```js
    * {
@@ -141,7 +139,7 @@ export interface PostgresArgs {
          * need to specify the master user credentials as they are always added by default.
          *
          * :::note
-         * This component will not create the Postgres users listed here. You need to
+         * This component will not create the MySQL users listed here. You need to
          * create them manually in the database.
          * :::
          *
@@ -247,14 +245,14 @@ export interface PostgresArgs {
   /**
    * Configure how this component works in `sst dev`.
    *
-   * By default, your Postgres database is deployed in `sst dev`. But if you want to instead
-   * connect to a locally running Postgres database, you can configure the `dev` prop.
+   * By default, your MySQL database is deployed in `sst dev`. But if you want to instead
+   * connect to a locally running MySQL database, you can configure the `dev` prop.
    *
    * :::note
    * By default, this creates a new RDS database even in `sst dev`.
    * :::
    *
-   * This will skip deploying an RDS database and link to the locally running Postgres database
+   * This will skip deploying an RDS database and link to the locally running MySQL database
    * instead.
    *
    * @example
@@ -265,38 +263,38 @@ export interface PostgresArgs {
    * ```ts
    * {
    *   dev: {
-   *     username: "postgres",
+   *     username: "root",
    *     password: "password",
-   *     database: "postgres",
+   *     database: "mysql",
    *     host: "localhost",
-   *     port: 5432
+   *     port: 3306
    *   }
    * }
    * ```
    */
   dev?: {
     /**
-     * The host of the local Postgres to connect to when running in dev.
+     * The host of the local MySQL to connect to when running in dev.
      * @default `"localhost"`
      */
     host?: Input<string>;
     /**
-     * The port of the local Postgres to connect to when running in dev.
-     * @default `5432`
+     * The port of the local MySQL to connect to when running in dev.
+     * @default `3306`
      */
     port?: Input<number>;
     /**
-     * The database of the local Postgres to connect to when running in dev.
+     * The database of the local MySQL to connect to when running in dev.
      * @default Inherit from the top-level [`database`](#database).
      */
     database?: Input<string>;
     /**
-     * The username of the local Postgres to connect to when running in dev.
+     * The username of the local MySQL to connect to when running in dev.
      * @default Inherit from the top-level [`username`](#username).
      */
     username?: Input<string>;
     /**
-     * The password of the local Postgres to connect to when running in dev.
+     * The password of the local MySQL to connect to when running in dev.
      * @default Inherit from the top-level [`password`](#password).
      */
     password?: Input<string>;
@@ -325,7 +323,7 @@ export interface PostgresArgs {
   };
 }
 
-export interface PostgresGetArgs {
+export interface MysqlGetArgs {
   /**
    * The ID of the database.
    */
@@ -336,15 +334,15 @@ export interface PostgresGetArgs {
   proxyId?: Input<string>;
 }
 
-interface PostgresRef {
+interface MysqlRef {
   ref: boolean;
   id: Input<string>;
   proxyId?: Input<string>;
 }
 
 /**
- * The `Postgres` component lets you add a Postgres database to your app using
- * [Amazon RDS Postgres](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_PostgreSQL.html).
+ * The `Mysql` component lets you add a MySQL database to your app using
+ * [Amazon RDS MySQL](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_MySQL.html).
  *
  * @example
  *
@@ -352,7 +350,7 @@ interface PostgresRef {
  *
  * ```js title="sst.config.ts"
  * const vpc = new sst.aws.Vpc("MyVpc");
- * const database = new sst.aws.Postgres("MyDatabase", { vpc });
+ * const database = new sst.aws.Mysql("MyDatabase", { vpc });
  * ```
  *
  * #### Link to a resource
@@ -370,50 +368,49 @@ interface PostgresRef {
  *
  * ```ts title="app/page.tsx" {1,5-9}
  * import { Resource } from "sst";
- * import { Pool } from "pg";
+ * import mysql from "mysql2/promise";
  *
- * const client = new Pool({
+ * const connection = await mysql.createConnection({
  *   user: Resource.MyDatabase.username,
  *   password: Resource.MyDatabase.password,
  *   database: Resource.MyDatabase.database,
  *   host: Resource.MyDatabase.host,
  *   port: Resource.MyDatabase.port,
  * });
- * await client.connect();
+ * await connection.execute("SELECT NOW()");
  * ```
  *
  * #### Running locally
  *
- * By default, your RDS Postgres database is deployed in `sst dev`. But let's say you are running
- * Postgres locally.
+ * By default, your RDS MySQL database is deployed in `sst dev`. But let's say you are
+ * running MySQL locally.
  *
  * ```bash
  * docker run \
  *   --rm \
- *   -p 5432:5432 \
- *   -v $(pwd)/.sst/storage/postgres:/var/lib/postgresql/data \
- *   -e POSTGRES_USER=postgres \
- *   -e POSTGRES_PASSWORD=password \
- *   -e POSTGRES_DB=local \
- *   postgres:16.4
+ *   -p 3306:3306 \
+ *   -v $(pwd)/.sst/storage/mysql:/var/lib/mysql \
+ *   -e MYSQL_DATABASE=local \
+ *   -e MYSQL_ROOT_PASSWORD=password \
+ *   mysql:8.0
  * ```
  *
  * You can connect to it in `sst dev` by configuring the `dev` prop.
  *
  * ```ts title="sst.config.ts" {3-8}
- * const postgres = new sst.aws.Postgres("MyPostgres", {
+ * const mysql = new sst.aws.Mysql("MyMysql", {
  *   vpc,
  *   dev: {
- *     username: "postgres",
+ *     username: "root",
  *     password: "password",
  *     database: "local",
- *     port: 5432
+ *     port: 3306
  *   }
  * });
  * ```
  *
- * This will skip deploying an RDS database and link to the locally running Postgres database
- * instead. [Check out the full example](/docs/examples/#aws-postgres-local).
+ * This will skip deploying an RDS database and link to the locally running MySQL database
+ * instead.
  *
  * ---
  *
@@ -427,7 +424,7 @@ interface PostgresRef {
  * `instance` type and the `storage` you are using.
  *
  * The above are rough estimates for _us-east-1_, check out the
- * [RDS for PostgreSQL pricing](https://aws.amazon.com/rds/postgresql/pricing/#On-Demand_DB_Instances_costs) for more details.
+ * [RDS for MySQL pricing](https://aws.amazon.com/rds/mysql/pricing/#On-Demand_DB_Instances_costs) for more details.
  *
  * #### RDS Proxy
  *
@@ -438,7 +435,7 @@ interface PostgresRef {
  * The above are rough estimates for _us-east-1_, check out the
  * [RDS Proxy pricing](https://aws.amazon.com/rds/proxy/pricing/) for more details.
  */
-export class Postgres extends Component implements Link.Linkable {
+export class Mysql extends Component implements Link.Linkable {
   private instance?: rds.Instance;
   private _password?: Output<string>;
   private proxy?: Output<rds.Proxy | undefined>;
@@ -450,15 +447,10 @@ export class Postgres extends Component implements Link.Linkable {
     password: Output<string>;
     database: Output<string>;
   };
-  public static v1 = PostgresV1;
 
-  constructor(
-    name: string,
-    args: PostgresArgs,
-    opts?: ComponentResourceOptions,
-  ) {
+  constructor(name: string, args: MysqlArgs, opts?: ComponentResourceOptions) {
     super(__pulumiType, name, args, opts);
-    const _version = 2;
+    const _version = 1;
     const self = this;
 
     if (args && "ref" in args) {
@@ -469,11 +461,10 @@ export class Postgres extends Component implements Link.Linkable {
       return;
     }
 
-    registerVersion();
     const multiAz = output(args.multiAz).apply((v) => v ?? false);
-    const engineVersion = output(args.version).apply((v) => v ?? "16.4");
+    const engineVersion = output(args.version).apply((v) => v ?? "8.0.40");
     const instanceType = output(args.instance).apply((v) => v ?? "t4g.micro");
-    const username = output(args.username).apply((v) => v ?? "postgres");
+    const username = output(args.username).apply((v) => v ?? "root");
     const storage = normalizeStorage();
     const dbName = output(args.database).apply(
       (v) => v ?? $app.name.replaceAll("-", "_"),
@@ -499,21 +490,15 @@ export class Postgres extends Component implements Link.Linkable {
     this.proxy = proxy;
 
     function reference() {
-      const ref = args as unknown as PostgresRef;
+      const ref = args as unknown as MysqlRef;
       const instance = rds.Instance.get(`${name}Instance`, ref.id, undefined, {
         parent: self,
       });
 
       const input = instance.tags.apply((tags) => {
-        registerVersion(
-          tags?.["sst:component-version"]
-            ? parseInt(tags["sst:component-version"])
-            : undefined,
-        );
-
         return {
           proxyId: output(ref.proxyId),
-          passwordTag: tags?.["sst:lookup:password"],
+          passwordTag: tags?.["sst:ref:password"],
         };
       });
 
@@ -527,9 +512,7 @@ export class Postgres extends Component implements Link.Linkable {
 
       const password = input.passwordTag.apply((passwordTag) => {
         if (!passwordTag)
-          throw new VisibleError(
-            `Failed to get password for Postgres ${name}.`,
-          );
+          throw new VisibleError(`Failed to get password for MySQL ${name}.`);
 
         const secret = secretsmanager.getSecretVersionOutput(
           { secretId: passwordTag },
@@ -543,29 +526,17 @@ export class Postgres extends Component implements Link.Linkable {
       return { instance, proxy, password };
     }
 
-    function registerVersion(overrideVersion?: number) {
-      self.registerVersion({
-        new: _version,
-        old: overrideVersion ?? $cli.state.version[name],
-        message: [
-          `This component has been renamed. Please change:\n`,
-          `"sst.aws.Postgres" to "sst.aws.Postgres.v${$cli.state.version[name]}"\n`,
-          `Learn more https://sst.dev/docs/components/#versioning`,
-        ].join("\n"),
-      });
-    }
-
     function normalizeStorage() {
       return output(args.storage ?? "20 GB").apply((v) => {
         const size = toGBs(v);
         if (size < 20) {
           throw new VisibleError(
-            `Storage must be at least 20 GB for the ${name} Postgres database.`,
+            `Storage must be at least 20 GB for the ${name} MySQL database.`,
           );
         }
         if (size > 65536) {
           throw new VisibleError(
-            `Storage cannot be greater than 65536 GB (64 TB) for the ${name} Postgres database.`,
+            `Storage cannot be greater than 65536 GB (64 TB) for the ${name} MySQL database.`,
           );
         }
         return size;
@@ -600,14 +571,14 @@ export class Postgres extends Component implements Link.Linkable {
         args.password === undefined
       ) {
         throw new VisibleError(
-          `You must provide the password to connect to your locally running Postgres database either by setting the "dev.password" or by setting the top-level "password" property.`,
+          `You must provide the password to connect to your locally running MySQL database either by setting the "dev.password" or by setting the top-level "password" property.`,
         );
       }
 
       const dev = {
         enabled: $dev,
         host: output(args.dev.host ?? "localhost"),
-        port: output(args.dev.port ?? 5432),
+        port: output(args.dev.port ?? 3306),
         username: args.dev.username ? output(args.dev.username) : username,
         password: output(args.dev.password ?? args.password ?? ""),
         database: args.dev.database ? output(args.dev.database) : dbName,
@@ -620,7 +591,7 @@ export class Postgres extends Component implements Link.Linkable {
           command: `sst print-and-not-quit`,
         },
         environment: {
-          SST_DEV_COMMAND_MESSAGE: interpolate`Make sure your local PostgreSQL server is using:
+          SST_DEV_COMMAND_MESSAGE: interpolate`Make sure your local MySQL server is using:
 
   username: "${dev.username}"
   password: "${dev.password}"
@@ -665,16 +636,14 @@ Listening on "${dev.host}:${dev.port}"...`,
           args.transform?.parameterGroup,
           `${name}ParameterGroup`,
           {
-            family: engineVersion.apply((v) => `postgres${v.split(".")[0]}`),
+            family: engineVersion.apply((v) => {
+              const [major, minor, _patch] = v.split(".");
+              return `mysql${major}.${minor}`;
+            }),
             parameters: [
               {
-                name: "rds.force_ssl",
-                value: "0",
-              },
-              {
-                name: "rds.logical_replication",
-                value: "1",
-                applyMethod: "pending-reboot",
+                name: "require_secure_transport",
+                value: "OFF",
               },
             ],
           },
@@ -715,7 +684,7 @@ Listening on "${dev.host}:${dev.port}"...`,
           {
             dbName,
             dbSubnetGroupName: subnetGroup.name,
-            engine: "postgres",
+            engine: "mysql",
             engineVersion,
             instanceClass: interpolate`db.${instanceType}`,
             username,
@@ -728,10 +697,14 @@ Listening on "${dev.host}:${dev.port}"...`,
             maxAllocatedStorage: storage,
             multiAz,
             backupRetentionPeriod: 7,
-            performanceInsightsEnabled: true,
+            // performance insights is only supported on .micro and .small MySQL instances
+            // https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PerfInsights.Overview.Engines.html
+            performanceInsightsEnabled: instanceType.apply(
+              (v) => !v.endsWith(".micro") && !v.endsWith(".small"),
+            ),
             tags: {
               "sst:component-version": _version.toString(),
-              "sst:lookup:password": secret.id,
+              "sst:ref:password": secret.id,
             },
           },
           { parent: self, deleteBeforeReplace: true },
@@ -834,7 +807,7 @@ Listening on "${dev.host}:${dev.port}"...`,
             args.transform?.proxy,
             `${name}Proxy`,
             {
-              engineFamily: "POSTGRESQL",
+              engineFamily: "MYSQL",
               auths: [
                 {
                   authScheme: "SECRETS",
@@ -878,7 +851,7 @@ Listening on "${dev.host}:${dev.port}"...`,
   }
 
   /**
-   * The identifier of the Postgres instance.
+   * The identifier of the MySQL instance.
    */
   public get id() {
     if (this.dev?.enabled) return output("placeholder");
@@ -886,7 +859,7 @@ Listening on "${dev.host}:${dev.port}"...`,
   }
 
   /**
-   * The name of the Postgres proxy.
+   * The name of the MySQL proxy.
    */
   public get proxyId() {
     if (this.dev?.enabled) return output("placeholder");
@@ -960,16 +933,16 @@ Listening on "${dev.host}:${dev.port}"...`,
   }
 
   /**
-   * Reference an existing Postgres database with the given name. This is useful when you
-   * create a Postgres database in one stage and want to share it in another. It avoids
-   * having to create a new Postgres database in the other stage.
+   * Reference an existing MySQL database with the given name. This is useful when you
+   * create a MySQL database in one stage and want to share it in another. It avoids
+   * having to create a new MySQL database in the other stage.
    *
    * :::tip
-   * You can use the `static get` method to share Postgres databases across stages.
+   * You can use the `static get` method to share MySQL databases across stages.
    * :::
    *
    * @param name The name of the component.
-   * @param args The arguments to get the Postgres database.
+   * @param args The arguments to get the MySQL database.
    * @param opts? Resource options.
    *
    * @example
@@ -978,11 +951,11 @@ Listening on "${dev.host}:${dev.port}"...`,
    *
    * ```ts title="sst.config.ts"
    * const database = $app.stage === "frank"
-   *   ? sst.aws.Postgres.get("MyDatabase", {
+   *   ? sst.aws.Mysql.get("MyDatabase", {
    *       id: "app-dev-mydatabase",
    *       proxyId: "app-dev-mydatabase-proxy",
    *     })
-   *   : new sst.aws.Postgres("MyDatabase", {
+   *   : new sst.aws.Mysql("MyDatabase", {
    *       proxy: true,
    *     });
    * ```
@@ -1000,21 +973,21 @@ Listening on "${dev.host}:${dev.port}"...`,
    */
   public static get(
     name: string,
-    args: PostgresGetArgs,
+    args: MysqlGetArgs,
     opts?: ComponentResourceOptions,
   ) {
-    return new Postgres(
+    return new Mysql(
       name,
       {
         ref: true,
         id: args.id,
         proxyId: args.proxyId,
-      } as unknown as PostgresArgs,
+      } as unknown as MysqlArgs,
       opts,
     );
   }
 }
 
-const __pulumiType = "sst:aws:Postgres";
+const __pulumiType = "sst:aws:Mysql";
 // @ts-expect-error
-Postgres.__pulumiType = __pulumiType;
+Mysql.__pulumiType = __pulumiType;

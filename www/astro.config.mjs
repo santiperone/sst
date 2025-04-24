@@ -90,6 +90,7 @@ const sidebar = [
           "docs/component/aws/email",
           "docs/component/aws/react",
           "docs/component/aws/remix",
+          "docs/component/aws/mysql",
           "docs/component/aws/nextjs",
           "docs/component/aws/queue",
           "docs/component/aws/vector",
