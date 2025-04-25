@@ -35,6 +35,7 @@ export default $config({
     //const cron = addCron();
     //const topic = addTopic();
     //const bus = addBus();
+    //const dynamo = addDynamo();
 
     return ret;
 
@@ -562,6 +563,21 @@ export default $config({
       });
 
       return bus;
+    }
+
+    function addDynamo() {
+      new sst.aws.Dynamo("MyTable", {
+        fields: {
+          userId: "string",
+          noteId: "string",
+          createdAt: "string",
+        },
+        primaryIndex: { hashKey: "userId", rangeKey: "noteId" },
+        globalIndexes: {
+          CreatedAtIndex: { hashKey: "userId", rangeKey: "createdAt" },
+          CreatedAtIndex2: { hashKey: "userId", rangeKey: "createdAt" },
+        },
+      });
     }
   },
 });
