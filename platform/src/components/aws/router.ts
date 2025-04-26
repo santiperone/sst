@@ -1904,6 +1904,8 @@ async function handler(event) {
    *   router: router.distributionID
    * };
    * ```
+   *
+   * Learn more about [how to configure a router for your app](/docs/configure-a-router).
    */
   public static get(
     name: string,
