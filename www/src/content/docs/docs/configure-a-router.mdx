@@ -69,9 +69,9 @@ Let's set this up.
 
 ---
 
-## Add a Router
+## Add a router
 
-Instead of adding custom domains to each component, let's add a `Router` to our app with the domain.
+Instead of adding custom domains to each component, let's add a `Router` to our app with the domain we are going to use in production.
 
 ```ts title="sst.config.ts"
 const router = new sst.aws.Router("MyRouter", {
@@ -124,14 +124,14 @@ Next, let's configure the dev stage.
 Since we also want to configure domains for our dev stage, let's add a function that returns the domain we want, based on the stage.
 
 ```ts title="sst.config.ts"
-const domain = (() => {
-  if ($app.stage === "production") return "example.com";
-  if ($app.stage === "dev") return "dev.example.com";
-  return;
-})();
+const domain = $app.stage === "production"
+  ? "example.com"
+  : $app.stage === "dev"
+    ? "dev.example.com"
+    : undefined;
 ```
 
-Now update our Router to use the domain.
+Now when we deploy the dev stage, we'll create a new `Router` with our dev domain.
 
 ```diff lang="ts" title="sst.config.ts"
 const router = new sst.aws.Router("MyRouter", {
@@ -162,11 +162,11 @@ const docs = new sst.aws.Astro("MyDocs", {
 
 ## Preview environments
 
-For our PR stages we want to share the same CloudFront distribution from dev, instead of creating a new one per stage.
+Currently, we create a new CloudFront distribution for dev and production. But we want to **share the same distribution from dev** in our PR stages.
 
 ---
 
-#### Share the router
+### Share the router
 
 To do that, let's modify how we create the `Router`.
 
@@ -199,19 +199,19 @@ const isPermanentStage = ["production", "dev"].includes($app.stage);
 Let's also update our `domain` helper.
 
 ```diff lang="ts" title="sst.config.ts"
-const domain = (() => {
-  if ($app.stage === "production") return "example.com";
-  if ($app.stage === "dev") return "dev.example.com";
--  return;
-+  return `${$app.stage}.dev.example.com`;
-})();
+const domain = $app.stage === "production"
+  ? "example.com"
+  : $app.stage === "dev"
+    ? "dev.example.com"
+-    : undefined;
++    : `${$app.stage}.dev.example.com`;
 ```
 
 Since the domain alias for the dev stage is set to `*.dev.example.com`, it can match `pr-123.dev.example.com`. But not `docs.pr-123.dev.example.com`. This is a limitation of CloudFront.
 
 ---
 
-#### Nested wildcard subdomains
+### Nested subdomains
 
 So we'll be using `docs-pr-123.dev.example.com` instead.
 
@@ -253,11 +253,11 @@ Here's what the final config looks like.
 ```ts title="sst.config.ts"
 const isPermanentStage = ["production", "dev"].includes($app.stage);
 
-const domain = (() => {
-  if ($app.stage === "production") return "example.com";
-  if ($app.stage === "dev") return "dev.example.com";
-  return `${$app.stage}.dev.example.com`;
-})();
+const domain = $app.stage === "production"
+  ? "example.com"
+  : $app.stage === "dev"
+    ? "dev.example.com"
+    : `${$app.stage}.dev.example.com`;
 
 function subdomain(name: string) {
   if (isPermanentStage) return `${name}.${domain}`;
