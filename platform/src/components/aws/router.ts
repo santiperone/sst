@@ -2219,6 +2219,15 @@ export type RouterRouteArgs = {
    *   domain: "dev.example.com"
    * }
    * ```
+   *
+   * While `dev.example.com` matches `*.example.com`. Something like
+   * `docs.dev.example.com` will not match `*.example.com`.
+   *
+   * :::tip
+   * Nested wildcards domain patterns are not supported.
+   * :::
+   *
+   * You'll need to add `*.dev.example.com` as an alias.
    */
   domain?: Input<string>;
   /**
