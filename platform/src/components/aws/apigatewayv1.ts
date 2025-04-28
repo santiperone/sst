@@ -1526,29 +1526,31 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
     function createDomainName() {
       if (!domain || !certificateArn) return;
 
-      return all([domain, certificateArn, endpointType]).apply(
-        ([domain, certificateArn, endpointType]) =>
-          domain.nameId
-            ? apigateway.DomainName.get(
+      return all([domain, endpointType]).apply(([domain, endpointType]) =>
+        domain.nameId
+          ? apigateway.DomainName.get(
+              `${name}DomainName`,
+              domain.nameId,
+              {},
+              { parent },
+            )
+          : new apigateway.DomainName(
+              ...transform(
+                args.transform?.domainName,
                 `${name}DomainName`,
-                domain.nameId,
-                {},
+                {
+                  domainName: domain?.name,
+                  endpointConfiguration: { types: endpointType },
+                  ...(endpointType === "REGIONAL"
+                    ? {
+                        regionalCertificateArn:
+                          certificateArn as Output<string>,
+                      }
+                    : { certificateArn: certificateArn as Output<string> }),
+                },
                 { parent },
-              )
-            : new apigateway.DomainName(
-                ...transform(
-                  args.transform?.domainName,
-                  `${name}DomainName`,
-                  {
-                    domainName: domain?.name,
-                    endpointConfiguration: { types: endpointType },
-                    ...(endpointType === "REGIONAL"
-                      ? { regionalCertificateArn: certificateArn }
-                      : { certificateArn }),
-                  },
-                  { parent },
-                ),
               ),
+            ),
       );
     }
 
