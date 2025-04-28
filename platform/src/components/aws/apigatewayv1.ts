@@ -27,6 +27,7 @@ import { dns as awsDns } from "./dns";
 import { DnsValidatedCertificate } from "./dns-validated-certificate";
 import { ApiGatewayV1IntegrationRoute } from "./apigatewayv1-integration-route";
 import { ApiGatewayV1UsagePlan } from "./apigatewayv1-usage-plan";
+import { useProvider } from "./helpers/provider";
 
 export interface ApiGatewayV1DomainArgs {
   /**
@@ -1231,6 +1232,7 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
     const parent = this;
     const api = this.api;
     const routes = this.routes;
+    const region = this.region;
     const endpointType = this.endpointType;
     const accessLog = normalizeAccessLog();
     const domain = normalizeDomain();
@@ -1498,19 +1500,27 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
     function createSsl() {
       if (!domain) return;
 
-      return domain.apply((domain) => {
-        if (domain.cert) return output(domain.cert);
-        if (domain.nameId) return output(undefined);
+      return all([domain, endpointType, region]).apply(
+        ([domain, endpointType, region]) => {
+          if (domain.cert) return output(domain.cert);
+          if (domain.nameId) return output(undefined);
 
-        return new DnsValidatedCertificate(
-          `${name}Ssl`,
-          {
-            domainName: domain.name,
-            dns: domain.dns!,
-          },
-          { parent },
-        ).arn;
-      });
+          return new DnsValidatedCertificate(
+            `${name}Ssl`,
+            {
+              domainName: domain.name,
+              dns: domain.dns!,
+            },
+            {
+              parent,
+              provider:
+                endpointType === "EDGE" && region !== "us-east-1"
+                  ? useProvider("us-east-1")
+                  : undefined,
+            },
+          ).arn;
+        },
+      );
     }
 
     function createDomainName() {
