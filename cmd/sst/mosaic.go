@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	goruntime "runtime"
 	"strings"
 	"time"
 
@@ -224,7 +225,15 @@ func CmdMosaic(c *cli.Cli) error {
 	currentExecutable, _ := os.Executable()
 
 	mode := c.String("mode")
+
 	if mode == "" {
+		mode = "multi"
+		if goruntime.GOOS == "windows" {
+			mode = "mono"
+		}
+	}
+
+	if mode == "multi" {
 		multi, err := multiplexer.New()
 		if err != nil {
 			return err

@@ -441,8 +441,8 @@ var root = &cli.Command{
 					Name: "mode",
 					Type: "string",
 					Description: cli.Description{
-						Short: "Use mode=basic to turn off multiplexer",
-						Long:  "Defaults to using the multiplexer or `mosaic` mode. Use `basic` to turn it off.",
+						Short: "mode=mono to turn off multiplexer. mode=basic to not spawn any child processes",
+						Long:  "Defaults to using `multi` mode. Use `mono` to get a single stream of all child process logs or `basic` to not spawn any child processes.",
 					},
 				},
 			},
