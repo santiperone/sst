@@ -177,7 +177,7 @@ To do that, let's modify how we create the `Router`.
        domain: {
          name: domain,
          aliases: [`*.${domain}`]
-       },
+       }
      })
 +   : sst.aws.Router.get("MyRouter", "A2WQRGCYGTFB7Z");
 ```
@@ -269,7 +269,7 @@ const router = isPermanentStage
      domain: {
        name: domain,
        aliases: [`*.${domain}`]
-     },
+     }
    })
   : sst.aws.Router.get("MyRouter", "A2WQRGCYGTFB7Z");
 
