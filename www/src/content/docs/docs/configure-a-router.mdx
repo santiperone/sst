@@ -71,7 +71,7 @@ For our PR stages or preview environments we'd like to have:
 - `pr-123.dev.example.com/api` serve `MyApi`
 - `docs-pr-123.dev.example.com` serve `MyDocs`
 
-For our prod and dev stages, we'll share the same Router.
+We'll create a separate Router for the dev stage and share it across all the PR stages.
 
 <DevDiagram style="width: min(100%, 640px);" />
 
