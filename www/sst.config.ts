@@ -6,7 +6,7 @@ export default $config({
       name: "www",
       removal: input?.stage === "production" ? "retain" : "remove",
       home: "aws",
-      version: "3.9.44",
+      version: "3.13.20",
     };
   },
   console: {
@@ -143,14 +143,14 @@ export default $config({
       domain:
         $app.stage === "production"
           ? {
-              name: domain,
-              redirects: [
-                "www.sst.dev",
-                "ion.sst.dev",
-                "serverless-stack.com",
-                "www.serverless-stack.com",
-              ],
-            }
+            name: domain,
+            redirects: [
+              "www.sst.dev",
+              "ion.sst.dev",
+              "serverless-stack.com",
+              "www.serverless-stack.com",
+            ],
+          }
           : domain,
       transform: {
         cdn: (args) => {
