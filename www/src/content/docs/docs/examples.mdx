@@ -963,7 +963,7 @@ View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-deno-re
 
 An example on how to run Drizzle migrations as a part of your CI/CD.
 
-Start by creating a function that runs migrations. 
+Start by creating a function that runs migrations.
 
 ```ts title="sst.config.ts"
 const migrator = new sst.aws.Function("DatabaseMigrator", {
@@ -979,7 +979,7 @@ const migrator = new sst.aws.Function("DatabaseMigrator", {
 });
 ```
 
-Where `src/migrator.ts` looks like this.
+Where `src/migrator.ts` looks like.
 
 ```ts title="src/migrator.ts"
 import { db } from "./drizzle";
@@ -2144,6 +2144,76 @@ View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-lambda-
 
 
 ---
+## AWS Lamda Rust Multiple-Binaries
+
+This example shows how to deploy multiple binary rust project to AWS Lambda.
+
+SST relies on the work of [cargo lambda](https://cargo-lambda) to build and deploy Rust Lambda functions.
+
+What is special about the following file is that we are defining multiple binaries using the `[[bin]]` section in the `Cargo.toml` file.
+
+```toml title="Cargo.toml" {13,14,15,17,18,19}
+[package]
+name = "aws-lambda-rust-multi-bin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lambda_runtime = "0.13.0"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"
+tokio = { version = "1", features = ["macros"] }
+# -- please note ommited dependencies --
+
+[[bin]]
+name = "push"
+path = "src/push.rs"
+
+[[bin]]
+name = "pop"
+path = "src/pop.rs"
+```
+
+We then utilise the . syntax to specify the handler binary
+
+```ts title="sst.config.ts" {5,11}
+new sst.aws.Function("push", {
+  url: true,
+  runtime: "rust",
+  link: [bucket],
+  handler: "./.push",
+});
+new sst.aws.Function("pop", {
+  url: true,
+  runtime: "rust",
+  link: [bucket],
+  handler: "./.pop",
+});
+```
+```ts title="sst.config.ts"
+const bucket = new sst.aws.Bucket("Bucket");
+const push = new sst.aws.Function("push", {
+  runtime: "rust",
+  handler: "./.push",
+  url: true,
+  architecture: "arm64",
+  link: [bucket],
+});
+const pop = new sst.aws.Function("pop", {
+  runtime: "rust",
+  handler: "./.pop",
+  url: true,
+  architecture: "arm64",
+  link: [bucket],
+});
+
+return { push_url: push.url, pop_url: pop.url };
+```
+
+View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-lambda-rust-multiple-binaries).
+
+
+---
 ## AWS Lambda streaming
 
 An example on how to enable streaming for Lambda functions.
@@ -2313,6 +2383,154 @@ return {
 ```
 
 View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-multi-region).
+
+
+---
+## AWS MySQL local
+
+In this example, we connect to a locally running MySQL instance for dev. While
+on deploy, we use RDS.
+
+We use the [`docker run`](https://docs.docker.com/reference/cli/docker/container/run/) CLI
+to start a local container with MySQL. You don't have to use Docker, you can use
+any other way to run MySQL locally.
+
+```bash
+docker run \
+  --rm \
+  -p 3306:3306 \
+  -v $(pwd)/.sst/storage/mysql:/var/lib/mysql/data \
+  -e MYSQL_ROOT_PASSWORD=password \
+  -e MYSQL_DATABASE=local \
+  mysql:8.0
+```
+
+The data is saved to the `.sst/storage` directory. So if you restart the dev server, the
+data will still be there.
+
+We then configure the `dev` property of the `Mysql` component with the settings for the
+local MySQL instance.
+
+```ts title="sst.config.ts"
+dev: {
+  username: "root",
+  password: "password",
+  database: "local",
+  host: "localhost",
+  port: 3306,
+}
+```
+
+By providing the `dev` prop for Mysql, SST will use the local MySQL instance and
+not deploy a new RDS database when running `sst dev`.
+
+It also allows us to access the database through a Resource `link` without having to
+conditionally check if we are running locally.
+
+```ts title="index.ts"
+const pool = new Pool({
+  host: Resource.MyDatabase.host,
+  port: Resource.MyDatabase.port,
+  user: Resource.MyDatabase.username,
+  password: Resource.MyDatabase.password,
+  database: Resource.MyDatabase.database,
+});
+```
+
+The above will work in both `sst dev` and `sst deploy`.
+```ts title="sst.config.ts"
+const vpc = new sst.aws.Vpc("MyVpc", { nat: "ec2" });
+
+const mysql = new sst.aws.Mysql("MyDatabase", {
+  dev: {
+    username: "root",
+    password: "password",
+    database: "local",
+    host: "localhost",
+    port: 3306,
+  },
+  vpc,
+});
+
+new sst.aws.Function("MyFunction", {
+  vpc,
+  url: true,
+  link: [mysql],
+  handler: "index.handler",
+});
+```
+
+View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-mysql-local).
+
+
+---
+## AWS MySQL
+
+In this example, we deploy an RDS MySQL database.
+
+```ts title="sst.config.ts"
+const mysql = new sst.aws.Mysql("MyDatabase", {
+  vpc,
+});
+```
+
+And link it to a Lambda function.
+
+```ts title="sst.config.ts" {3}
+new sst.aws.Function("MyApp", {
+  handler: "index.handler",
+  link: [mysql],
+  url: true,
+  vpc,
+});
+```
+
+Now in the function we can access the database.
+
+```ts title="index.ts"
+const connection = await mysql.createConnection({
+  database: Resource.MyDatabase.database,
+  host: Resource.MyDatabase.host,
+  port: Resource.MyDatabase.port,
+  user: Resource.MyDatabase.username,
+  password: Resource.MyDatabase.password,
+});
+```
+
+We also enable the `bastion` option for the VPC. This allows us to connect to
+the database from our local machine with the `sst tunnel` CLI.
+
+```bash "sudo"
+sudo npx sst tunnel install
+```
+
+This needs _sudo_ to create a network interface on your machine. You’ll only
+need to do this once on your machine.
+
+Now you can run `npx sst dev` and you can connect to the database from your local machine.
+```ts title="sst.config.ts"
+const vpc = new sst.aws.Vpc("MyVpc", { nat: "ec2", bastion: true });
+const mysql = new sst.aws.Mysql("MyDatabase", {
+  vpc,
+});
+const app = new sst.aws.Function("MyApp", {
+  handler: "index.handler",
+  link: [mysql],
+  url: true,
+  vpc,
+});
+
+return {
+  app: app.url,
+  host: mysql.host,
+  port: mysql.port,
+  username: mysql.username,
+  password: mysql.password,
+  database: mysql.database,
+};
+```
+
+View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-mysql).
 
 
 ---
@@ -2630,6 +2848,77 @@ new sst.aws.Nextjs("MyWeb");
 ```
 
 View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-nextjs-stream).
+
+
+---
+## AWS OpenSearch local
+
+In this example, we connect to a locally running OpenSearch process for dev. While
+on deploy, we use OpenSearch.
+
+We use the [`docker run`](https://docs.docker.com/reference/cli/docker/container/run/)
+CLI to start a local container with OpenSearch. You don't have to use Docker, you can use
+any other way to run OpenSearch locally.
+
+```bash
+docker run \
+  --rm \
+  -p 9200:9200 \
+  -v $(pwd)/.sst/storage/opensearch:/usr/share/opensearch/data \
+  -e discovery.type=single-node \
+  -e plugins.security.disabled=true \
+  -e OPENSEARCH_INITIAL_ADMIN_PASSWORD=^Passw0rd^ \
+  opensearchproject/opensearch:2.17.0
+```
+
+The data is saved to the `.sst/storage` directory. So if you restart the dev server, the
+data will still be there.
+
+We then configure the `dev` property of the `OpenSearch` component with the settings for
+the local OpenSearch instance.
+
+```ts title="sst.config.ts"
+dev: {
+  url: "http://localhost:9200",
+  username: "admin",
+  password: "^Passw0rd^"
+}
+```
+
+By providing the `dev` prop for OpenSearch, SST will use the local OpenSearch process and
+not deploy a new OpenSearch domain when running `sst dev`.
+
+It also allows us to access the local process through a Resource `link` without having
+to conditionally check if we are running locally.
+
+```ts title="index.ts"
+const client = new Client({
+  node: Resource.MySearch.url,
+  auth: {
+    username: Resource.MySearch.username,
+    password: Resource.MySearch.password,
+  },
+});
+```
+
+The above will work in both `sst dev` and `sst deploy`.
+```ts title="sst.config.ts"
+const search = new sst.aws.OpenSearch("MySearch", {
+  dev: {
+    url: "http://localhost:9200",
+    username: "admin",
+    password: "^Passw0rd^",
+  },
+});
+
+new sst.aws.Function("MyApp", {
+  handler: "index.handler",
+  url: true,
+  link: [search],
+});
+```
+
+View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-open-search-local).
 
 
 ---
