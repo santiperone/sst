@@ -108,6 +108,39 @@ export default $config({
       },
     };
 
+    // Redirect /install to https://raw.githubusercontent.com/sst/sst/dev/install
+    const redirectToInstallBehavior = {
+      targetOriginId: "redirect",
+      viewerProtocolPolicy: "redirect-to-https",
+      allowedMethods: ["GET", "HEAD", "OPTIONS"],
+      cachedMethods: ["GET", "HEAD"],
+      functionAssociations: [
+        {
+          eventType: "viewer-request",
+          functionArn: new aws.cloudfront.Function("InstallRedirect", {
+            runtime: "cloudfront-js-2.0",
+            code: [
+              `async function handler(event) {`,
+              `  const request = event.request;`,
+              `  return {`,
+              `    statusCode: 302,`,
+              `    statusDescription: 'Found',`,
+              `    headers: {`,
+              `      location: { value: "https://raw.githubusercontent.com/sst/sst/dev/install" }`,
+              `    },`,
+              `  };`,
+              `}`,
+            ].join("\n"),
+          }).arn,
+        },
+      ],
+      forwardedValues: {
+        queryString: true,
+        headers: ["Origin"],
+        cookies: { forward: "none" },
+      },
+    };
+
     // Strip .html from /blog
     const stripHtmlBehavior = {
       targetOriginId: "redirect",
@@ -143,14 +176,14 @@ export default $config({
       domain:
         $app.stage === "production"
           ? {
-            name: domain,
-            redirects: [
-              "www.sst.dev",
-              "ion.sst.dev",
-              "serverless-stack.com",
-              "www.serverless-stack.com",
-            ],
-          }
+              name: domain,
+              redirects: [
+                "www.sst.dev",
+                "ion.sst.dev",
+                "serverless-stack.com",
+                "www.serverless-stack.com",
+              ],
+            }
           : domain,
       transform: {
         cdn: (args) => {
@@ -173,6 +206,7 @@ export default $config({
           ).apply((cacheBehaviors) => [
             ...(cacheBehaviors || []),
             { pathPattern: "/blog/*.html", ...stripHtmlBehavior },
+            { pathPattern: "/install", ...redirectToInstallBehavior },
             { pathPattern: "/examples*", ...redirectToGuideBehavior },
             { pathPattern: "/chapters*", ...redirectToGuideBehavior },
             { pathPattern: "/archives*", ...redirectToGuideBehavior },
