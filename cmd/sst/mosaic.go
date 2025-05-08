@@ -74,16 +74,6 @@ func CmdMosaic(c *cli.Cli) error {
 		processExited := make(chan bool)
 		timeout := time.Minute * 50
 
-		output := []io.Writer{}
-		if child != "" && flag.SST_LOG_CHILDREN {
-			slog.Info("creating log file for child process")
-			stdout, err := os.Create(filepath.Join(path.ResolveLogDir(cfgPath), child+".log"))
-			if err != nil {
-				return err
-			}
-			defer stdout.Close()
-			output = append(output, stdout)
-		}
 		for {
 			select {
 			case <-c.Context.Done():
@@ -133,8 +123,17 @@ func CmdMosaic(c *cli.Cli) error {
 						cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 					}
 					cmd.Stdin = os.Stdin
-					cmd.Stdout = io.MultiWriter(append(output, os.Stdout)...)
-					cmd.Stderr = io.MultiWriter(append(output, os.Stderr)...)
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+					if child != "" && flag.SST_LOG_CHILDREN {
+						slog.Info("creating log file for child process")
+						file, err := os.Create(filepath.Join(path.ResolveLogDir(cfgPath), child+".log"))
+						if err != nil {
+							return err
+						}
+						cmd.Stdout = io.MultiWriter(file, os.Stdout)
+						cmd.Stderr = io.MultiWriter(file, os.Stderr)
+					}
 					cmd.Start()
 					go func() {
 						cmd.Wait()
