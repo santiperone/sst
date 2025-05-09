@@ -389,6 +389,12 @@ export interface FunctionArgs {
    * ##### Python
    *
    * For Python, [uv](https://docs.astral.sh/uv/) is used to package the function.
+   * You need to have it installed.
+   *
+   * :::note
+   * You need uv installed for Python functions.
+   * :::
+   *
    * The functions need to be in a [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/#workspace-sources).
    *
    * ```js
@@ -1444,7 +1450,7 @@ export interface FunctionArgs {
  *   });
  *   ```
  *
- *   Your handler function needs to be in a uv workspace. [Learn more below](#handler).
+ *   You need to have uv installed and your handler function needs to be in a uv workspace. [Learn more below](#handler).
  *   </TabItem>
  *   <TabItem label="Go">
  *   Pass in the directory to your Go module.
