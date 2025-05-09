@@ -226,6 +226,7 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
   },
+  prefetch: import.meta.env.DEV ? false : true,
   devToolbar: {
     enabled: false,
   },

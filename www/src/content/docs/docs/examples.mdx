@@ -2144,7 +2144,7 @@ View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-lambda-
 
 
 ---
-## AWS Lamda Rust Multiple-Binaries
+## AWS Lamda Rust multiple-binaries
 
 This example shows how to deploy multiple binary rust project to AWS Lambda.
 
@@ -3187,6 +3187,240 @@ return {
 ```
 
 View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-puppeteer).
+
+
+---
+## AWS Lambda Python container
+
+Python Lambda function that use large dependencies like `numpy` and `pandas`, can
+hit the 250MB Lambda package limit. To work around this, you can deploy them
+as a container image to Lambda.
+
+:::tip
+Container images on Lambda have a limit of 10GB.
+:::
+
+In this example, we deploy two functions as container image.
+
+```ts title="sst.config.ts" {2-4}
+const base = new sst.aws.Function("PythonFn", {
+  python: {
+    container: true,
+  },
+  handler: "./functions/src/functions/api.handler",
+  runtime: "python3.11",
+  link: [linkableValue],
+  url: true,
+});
+```
+
+Now when you run `sst deploy`, it uses a built-in Dockerfile to build the image
+and deploy it. You'll need to have the Docker daemon running.
+
+:::note
+You need to have the Docker daemon running locally.
+:::
+
+To use a custom Dockerfile, you can place a `Dockerfile` in the root of the
+uv workspace for your function.
+
+```ts title="sst.config.ts" {5}
+const custom = new sst.aws.Function("PythonFnCustom", {
+  python: {
+    container: true,
+  },
+  handler: "./custom_dockerfile/src/custom_dockerfile/api.handler",
+  runtime: "python3.11",
+  link: [linkableValue],
+  url: true,
+});
+```
+
+Here we have a `Dockerfile` in the `custom_dockerfile/` directory.
+
+```dockerfile title="custom_dockerfile/Dockerfile"
+# The python version to use is supplied as an arg from SST
+ARG PYTHON_VERSION=3.11
+
+# Use an official AWS Lambda base image for Python
+FROM public.ecr.aws/lambda/python:${PYTHON_VERSION}
+
+# ...
+```
+
+The project structure looks something like this.
+
+```txt {5}
+├── sst.config.ts
+├── pyproject.toml
+└── custom_dockerfile
+    ├── pyproject.toml
+    ├── Dockerfile
+    └── src
+        └── custom_dockerfile
+            └── api.py
+```
+
+Locally, you want to set the Python version in your `pyproject.toml` to make sure
+that `sst dev` uses the same version as `sst deploy`.
+```ts title="sst.config.ts"
+const linkableValue = new sst.Linkable("MyLinkableValue", {
+  properties: {
+    foo: "Hello World",
+  },
+});
+
+const base = new sst.aws.Function("PythonFn", {
+  python: {
+    container: true,
+  },
+  handler: "./functions/src/functions/api.handler",
+  runtime: "python3.11",
+  link: [linkableValue],
+  url: true,
+});
+
+const custom = new sst.aws.Function("PythonFnCustom", {
+  python: {
+    container: true,
+  },
+  handler: "./custom_dockerfile/src/custom_dockerfile/api.handler",
+  runtime: "python3.11",
+  link: [linkableValue],
+  url: true,
+});
+
+return {
+  base: base.url,
+  custom: custom.url,
+};
+```
+
+View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-python-container).
+
+
+---
+## AWS Lambda Python Hugging Face
+
+Uses a Python Lambda container image to deploy a lightweight
+[Hugging Face](https://huggingface.co/) model.
+
+Uses the [transformers](https://github.com/huggingface/transformers) library to
+generate text using the
+[TinyStories-33M](https://huggingface.co/roneneldan/TinyStories-33M) model. The
+backend is the pytorch cpu runtime.
+
+:::note
+This is not a production ready example.
+:::
+
+This example also shows how it is possible to use custom index resolution to get
+dependencies from a private pypi server such as the pytorch cpu link. This
+example also shows how to use a custom Dockerfile to handle complex builds such
+as installing pytorch and pruning the build size.
+```ts title="sst.config.ts"
+new sst.aws.Function("MyPythonFunction", {
+  python: {
+    container: true,
+  },
+  handler: "functions/src/functions/api.handler",
+  runtime: "python3.12",
+  timeout: "60 seconds",
+  url: true,
+});
+```
+
+View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-python-huggingface).
+
+
+---
+## AWS Lambda Python
+
+SST uses [uv](https://github.com/astral-sh/uv) to manage your Python runtime, make
+sure you have it [installed](https://docs.astral.sh/uv/getting-started/installation/).
+
+Any [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/#workspace-sources)
+package can be built and deployed as a Lambda function using SST. Drop-in mode
+is currently not supported.
+
+:::note
+Builds currently do not tree shake so lots of workspaces can make the build
+larger than necessary.
+:::
+
+In this example we deploy a handler from the `functions/` directory. It depends
+on shared code from another uv workspace in the `core/` directory.
+
+```txt
+├── sst.config.ts
+├── pyproject.toml
+├── core
+│   ├── pyproject.toml
+│   └── src
+│       └── core
+│           └── __init__.py
+└── functions
+    ├── pyproject.toml
+    └── src
+        └── functions
+            ├── __init__.py
+            └── api.py
+```
+
+The `handler` is the path to the handler file and the name of the handler function
+in it.
+
+```ts title="sst.config.ts" {2}
+new sst.aws.Function("MyPythonFunction", {
+  handler: "functions/src/functions/api.handler",
+  runtime: "python3.11",
+  link: [linkableValue],
+  url: true,
+});
+```
+SST will traverse up from the handler path and look for the nearest
+`pyproject.toml`. And will throw an error if it can't find one.
+
+To access linked resources, you can use the SST SDK.
+
+```py title="functions/src/functions/api.py" {1}
+from sst import Resource
+
+def handler(event, context):
+    print(Resource.MyLinkableValue.foo)
+```
+
+Where the `sst` package can be added to your `pyproject.toml`.
+
+```toml title="functions/pyproject.toml"
+[tool.uv.sources]
+sst = { git = "https://github.com/sst/sst.git", subdirectory = "sdk/python", branch = "dev" }
+```
+
+You also want to set the Python version in your `pyproject.toml` to the same
+version as the one in Lambda.
+
+```toml title="functions/pyproject.toml"
+requires-python = "==3.11.*"
+```
+
+This makes sure that your functions work the same in `sst dev` as `sst deploy`.
+```ts title="sst.config.ts"
+const linkableValue = new sst.Linkable("MyLinkableValue", {
+  properties: {
+    foo: "Hello World",
+  },
+});
+
+new sst.aws.Function("MyPythonFunction", {
+  handler: "functions/src/functions/api.handler",
+  runtime: "python3.11",
+  link: [linkableValue],
+  url: true,
+});
+```
+
+View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-python).
 
 
 ---
