@@ -1929,6 +1929,30 @@ View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-lambda-
 
 
 ---
+## AWS Lambda build hook
+
+In this example we use hook into the Lambda function build process with
+`hook.postbuild`.
+
+This is useful for modifying the generated Lambda function code before it's
+uploaded to AWS. It can also be used for uploading the generated sourcemaps
+to a service like Sentry.
+```ts title="sst.config.ts"
+new sst.aws.Function("MyFunction", {
+  url: true,
+  handler: "index.handler",
+  hook: {
+    async postbuild(dir) {
+      console.log(`postbuild ------- ${dir}`);
+    },
+  },
+});
+```
+
+View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-lambda-hook).
+
+
+---
 ## AWS Lambda retry with queues
 
 An example on how to retry Lambda invocations using SQS queues.
@@ -3336,7 +3360,7 @@ View the [full example](https://github.com/sst/sst/tree/dev/examples/aws-python-
 ---
 ## AWS Lambda Python
 
-SST uses [uv](https://github.com/astral-sh/uv) to manage your Python runtime, make
+SST uses [uv](https://docs.astral.sh/uv/) to manage your Python runtime, make
 sure you have it [installed](https://docs.astral.sh/uv/getting-started/installation/).
 
 Any [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/#workspace-sources)
@@ -3378,6 +3402,7 @@ new sst.aws.Function("MyPythonFunction", {
   url: true,
 });
 ```
+
 SST will traverse up from the handler path and look for the nearest
 `pyproject.toml`. And will throw an error if it can't find one.
 
