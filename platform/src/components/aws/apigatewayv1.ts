@@ -446,21 +446,23 @@ export interface ApiGatewayV1AuthorizerArgs {
 
 export interface ApiGatewayV1UsagePlanArgs {
   /**
-   * Configure a rate limits to protect your API from being overwhelmed by too many requests
-   * at once.
+   * Configure rate limits to protect your API from being overwhelmed by too many
+   * requests at once.
+   *
    * @example
    * ```js
    * {
    *   throttle: {
    *     rate: 100,
-   *     burst: 200,
+   *     burst: 200
    *   }
    * }
    * ```
    */
   throttle?: Input<{
     /**
-     * The maximum number of requests permitted in a short-term spike beyond the rate limit.
+     * The maximum number of requests permitted in a short-term spike beyond the
+     * rate limit.
      */
     burst?: Input<number>;
     /**
@@ -469,21 +471,23 @@ export interface ApiGatewayV1UsagePlanArgs {
     rate?: Input<number>;
   }>;
   /**
-   * Configure a cap on the total number of requests allowed within a specified time period.
+   * Configure a cap on the total number of requests allowed within a specified time
+   * period.
    * @example
    * ```js
    * {
    *   quota: {
    *     limit: 1000,
    *     period: "month",
-   *     offset: 0,
+   *     offset: 0
    *   }
    * }
    * ```
    */
   quota?: Input<{
     /**
-     * The maximum number of requests that can be made in the specified period.
+     * The maximum number of requests that can be made in the specified period of
+     * time.
      */
     limit: Input<number>;
     /**
@@ -492,8 +496,15 @@ export interface ApiGatewayV1UsagePlanArgs {
     period: Input<"day" | "week" | "month">;
     /**
      * The number of days into the period when the quota counter is reset.
-     * For example, with period="month" and offset=0, the quota is reset at
-     * the beginning of each month.
+     *
+     * For example, this resets the quota at the beginning of each month.
+     *
+     * ```js
+     * {
+     *   period: "month",
+     *   offset: 0
+     * }
+     * ```
      */
     offset?: Input<number>;
   }>;
@@ -1172,60 +1183,61 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
    * @param name The name of the usage plan.
    * @param args Configure the usage plan.
    * @example
-   * Add a usage plan with throttling and quota settings. This must be done after the
-   * routes are created and deployed.
+   *
+   * To add a usage plan to an API, you need to enable the API key for a route, and
+   * then deploy the API.
+   *
+   * ```ts title="sst.config.ts" {4}
+   * const api = new sst.aws.ApiGatewayV1("MyApi");
+   *
+   * api.route("GET /", "src/get.handler", {
+   *   apiKey: true
+   * });
+   *
+   * api.deploy();
+   * ```
+   *
+   * Then define your usage plan.
    *
    * ```js title="sst.config.ts"
+   * const api = new sst.aws.ApiGatewayV1("MyApi");
+   *
    * const plan = api.addUsagePlan("MyPlan", {
    *   throttle: {
    *     rate: 100,
-   *     burst: 200,
+   *     burst: 200
    *   },
    *   quota: {
    *     limit: 1000,
    *     period: "month",
-   *     offset: 0,
+   *     offset: 0
    *   }
    * });
    * ```
    *
-   * Create an API key for the usage plan.
+   * And create the API key for the plan.
    *
    * ```js title="sst.config.ts"
    * const key = plan.addApiKey("MyKey");
    * ```
    *
-   * Enable the API key on a specific route, as by default it is disabled.
+   * You can now link the API and API key to other resources, like a function.
    *
-   * ```js title="sst.config.ts"
-   * api.route("GET /", "src/get.handler", {
-   *   apiKey: true
+   * ```ts title="sst.config.ts"
+   * new sst.aws.Function("MyFunction", {
+   *   handler: "src/lambda.handler",
+   *   link: [api, key]
    * });
    * ```
    *
-   * Or enable the API key for all routes.
-   *
-   * ```js title="sst.config.ts"
-   * const api = new sst.aws.ApiGatewayV1("MyApi", {
-   *   transform: {
-   *     route: {
-   *       args: {
-   *         apiKey: true
-   *       }
-   *     }
-   *   }
-   * });
-   * ```
-   *
-   * You can link the API key to other resources, like a function. Once linked,
-   * include the key in the `x-api-key` header in your API requests.
+   * Once linked, include the key in the `x-api-key` header with your requests.
    *
    * ```ts title="src/lambda.ts"
    * import { Resource } from "sst";
    *
    * await fetch(Resource.MyApi.url, {
    *   headers: {
-   *     "x-api-key": Resource.MyKey.value,
+   *     "x-api-key": Resource.MyKey.value
    *   }
    * });
    * ```
@@ -1248,14 +1260,14 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
   }
 
   /**
-   * Create a deployment for the API Gateway REST API.
+   * Creates a deployment for the API Gateway REST API.
    *
-   * :::note
-   * You need to call this after you've added all your routes.
+   * :::caution
+   * Your routes won't be added if `deploy` isn't called.
    * :::
    *
-   * Due to the way API Gateway V1 is created internally, you'll need to call this method after
-   * you've added all your routes.
+   * Your routes won't be added if this isn't called after you've added them. This
+   * is due to a quirk in the way API Gateway V1 is created internally.
    */
   public deploy() {
     const name = this.constructorName;
