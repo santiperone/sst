@@ -139,6 +139,10 @@ export interface StepFunctionsArgs {
  * The `StepFunctions` component lets you add state machines to your app.
  * using [AWS Step Functions](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html).
  *
+ * :::note
+ * This component is currently in beta. Please [report any issues](https://github.com/sst/sst/issues) you find.
+ * :::
+ *
  * @example
  * #### Minimal example
  *
