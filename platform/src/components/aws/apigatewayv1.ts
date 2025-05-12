@@ -1201,8 +1201,6 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
    * Then define your usage plan.
    *
    * ```js title="sst.config.ts"
-   * const api = new sst.aws.ApiGatewayV1("MyApi");
-   *
    * const plan = api.addUsagePlan("MyPlan", {
    *   throttle: {
    *     rate: 100,
