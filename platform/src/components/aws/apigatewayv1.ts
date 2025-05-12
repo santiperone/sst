@@ -207,22 +207,22 @@ export interface ApiGatewayV1Args {
    */
   domain?: Input<string | Prettify<ApiGatewayV1DomainArgs>>;
   /**
-   * Configure the [API Gateway REST API endpoint](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-endpoint-types.html).
+   * Configure the type of API Gateway REST API endpoint.
    *
-   * By default, it's an `edge` endpoint, meaning that a CloudFront distribution is created
-   * for the API. This could help in cases where requests are geographically distributed.
+   * - `edge`: The default; it creates a CloudFront distribution for the API.
+   *   Useful for cases where requests are geographically distributed.
+   * - `regional`: Endpoints are deployed in specific AWS regions and are
+   *   intended to be accessed directly by clients within or near that region.
+   * - `private`: Endpoints allows access to the API only from within a specified
+   *   Amazon VPC (Virtual Private Cloud) using VPC endpoints. These do not expose
+   *   the API to the public internet.
    *
-   * On the other hand, `regional` endpoints are deployed in a specific AWS region and are
-   * intended to be accessed directly by clients within or near that region.
-   *
-   * And a `private` endpoints allow access to the API only from within a specified
-   * Amazon VPC (Virtual Private Cloud) using VPC endpoints. These endpoints do not expose
-   * the API to the public internet.
+   * Learn more about the [different types of endpoints](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-endpoint-types.html).
    *
    * @default `{type: "edge"}`
    * @example
    *
-   * To create a regional endpoint.
+   * For example, to create a regional endpoint.
    * ```js
    * {
    *   endpoint: {
@@ -252,7 +252,7 @@ export interface ApiGatewayV1Args {
     vpcEndpointIds?: Input<Input<string>[]>;
   }>;
   /**
-   * Enable the CORS (Cross-origin resource sharing) settings for your REST API.
+   * Enable the CORS or Cross-origin resource sharing for your API.
    * @default `true`
    * @example
    * Disable CORS.
@@ -264,7 +264,7 @@ export interface ApiGatewayV1Args {
    */
   cors?: Input<boolean>;
   /**
-   * Configure the [API Gateway logs](https://docs.aws.amazon.com/apigateway/latest/developerguide/view-cloudwatch-log-events-in-cloudwatch-console.html) in CloudWatch. By default, access logs are enabled and kept for 1 month.
+   * Configure the [API Gateway logs](https://docs.aws.amazon.com/apigateway/latest/developerguide/view-cloudwatch-log-events-in-cloudwatch-console.html) in CloudWatch. By default, access logs are enabled and retained for 1 month.
    * @default `{retention: "1 month"}`
    * @example
    * ```js
@@ -277,7 +277,7 @@ export interface ApiGatewayV1Args {
    */
   accessLog?: Input<{
     /**
-     * The duration the API Gateway logs are kept in CloudWatch.
+     * The duration the API Gateway logs are retained in CloudWatch.
      * @default `1 month`
      */
     retention?: Input<keyof typeof RETENTION>;
@@ -528,73 +528,73 @@ export interface ApiGatewayV1RouteArgs {
   auth?: Input<
     | false
     | {
+      /**
+       * Enable IAM authorization for a given API route.
+       *
+       * When IAM auth is enabled, clients need to use Signature Version 4 to sign their requests with their AWS credentials.
+       */
+      iam?: Input<boolean>;
+      /**
+       * Enable custom Lambda authorization for a given API route. Pass in the authorizer ID.
+       * @example
+       * ```js
+       * {
+       *   auth: {
+       *     custom: myAuthorizer.id
+       *   }
+       * }
+       * ```
+       *
+       * Where `myAuthorizer` is:
+       *
+       * ```js
+       * const userPool = new aws.cognito.UserPool();
+       * const myAuthorizer = api.addAuthorizer({
+       *   name: "MyAuthorizer",
+       *   userPools: [userPool.arn]
+       * });
+       * ```
+       */
+      custom?: Input<string>;
+      /**
+       * Enable Cognito User Pool authorization for a given API route.
+       *
+       * @example
+       * You can configure JWT auth.
+       *
+       * ```js
+       * {
+       *   auth: {
+       *     cognito: {
+       *       authorizer: myAuthorizer.id,
+       *       scopes: ["read:profile", "write:profile"]
+       *     }
+       *   }
+       * }
+       * ```
+       *
+       * Where `myAuthorizer` is:
+       *
+       * ```js
+       * const userPool = new aws.cognito.UserPool();
+       *
+       * const myAuthorizer = api.addAuthorizer({
+       *   name: "MyAuthorizer",
+       *   userPools: [userPool.arn]
+       * });
+       * ```
+       */
+      cognito?: Input<{
         /**
-         * Enable IAM authorization for a given API route.
-         *
-         * When IAM auth is enabled, clients need to use Signature Version 4 to sign their requests with their AWS credentials.
+         * Authorizer ID of the Cognito User Pool authorizer.
          */
-        iam?: Input<boolean>;
+        authorizer: Input<string>;
         /**
-         * Enable custom Lambda authorization for a given API route. Pass in the authorizer ID.
-         * @example
-         * ```js
-         * {
-         *   auth: {
-         *     custom: myAuthorizer.id
-         *   }
-         * }
-         * ```
-         *
-         * Where `myAuthorizer` is:
-         *
-         * ```js
-         * const userPool = new aws.cognito.UserPool();
-         * const myAuthorizer = api.addAuthorizer({
-         *   name: "MyAuthorizer",
-         *   userPools: [userPool.arn]
-         * });
-         * ```
+         * Defines the permissions or access levels that the authorization token grants.
          */
-        custom?: Input<string>;
-        /**
-         * Enable Cognito User Pool authorization for a given API route.
-         *
-         * @example
-         * You can configure JWT auth.
-         *
-         * ```js
-         * {
-         *   auth: {
-         *     cognito: {
-         *       authorizer: myAuthorizer.id,
-         *       scopes: ["read:profile", "write:profile"]
-         *     }
-         *   }
-         * }
-         * ```
-         *
-         * Where `myAuthorizer` is:
-         *
-         * ```js
-         * const userPool = new aws.cognito.UserPool();
-         *
-         * const myAuthorizer = api.addAuthorizer({
-         *   name: "MyAuthorizer",
-         *   userPools: [userPool.arn]
-         * });
-         * ```
-         */
-        cognito?: Input<{
-          /**
-           * Authorizer ID of the Cognito User Pool authorizer.
-           */
-          authorizer: Input<string>;
-          /**
-           * Defines the permissions or access levels that the authorization token grants.
-           */
-          scopes?: Input<Input<string>[]>;
-        }>;
-      }
+        scopes?: Input<Input<string>[]>;
+      }>;
+    }
   >;
   /**
    * Specify if an API key is required for the route. By default, API key is not required.
@@ -679,12 +679,10 @@ export interface ApiGatewayV1IntegrationArgs {
  * ```
  *
  * :::note
- * You need to call the `deploy` method after you've added all your routes.
+ * You need to call `deploy` after you've added all your routes.
  * :::
  *
  * #### Configure the routes
- *
- * You can configure the route.
  *
  * ```ts title="sst.config.ts"
  * api.route("GET /", "src/get.handler", {
@@ -694,7 +692,7 @@ export interface ApiGatewayV1IntegrationArgs {
  *
  * #### Configure the route handler
  *
- * You can configure the route handler function.
+ * You can configure the Lambda function that'll handle the route.
  *
  * ```ts title="sst.config.ts"
  * api.route("POST /", {
@@ -705,8 +703,8 @@ export interface ApiGatewayV1IntegrationArgs {
  *
  * #### Default props for all routes
  *
- * You can use the `transform` to set some default props for all your routes. For example,
- * instead of setting the `memory` for each route.
+ * You can use a `transform` to set some default props for all your routes. For
+ * example, instead of setting the `memory` for each route.
  *
  * ```ts title="sst.config.ts"
  * api.route("GET /", { handler: "src/get.handler", memory: "2048 MB" });
@@ -788,9 +786,9 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
           ? { types: "REGIONAL" as const }
           : endpoint.type === "private"
             ? {
-                types: "PRIVATE" as const,
-                vpcEndpointIds: endpoint.vpcEndpointIds,
-              }
+              types: "PRIVATE" as const,
+              vpcEndpointIds: endpoint.vpcEndpointIds,
+            }
             : { types: "EDGE" as const };
       });
     }
@@ -815,9 +813,9 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
   public get url() {
     return this.apigDomain && this.apiMapping
       ? all([this.apigDomain.domainName, this.apiMapping.basePath]).apply(
-          ([domain, key]) =>
-            key ? `https://${domain}/${key}/` : `https://${domain}`,
-        )
+        ([domain, key]) =>
+          key ? `https://${domain}/${key}/` : `https://${domain}`,
+      )
       : interpolate`https://${this.api.id}.execute-api.${this.region}.amazonaws.com/${$app.stage}/`;
   }
 
@@ -977,16 +975,15 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
   }
 
   /**
-   * Add a custom integration to the API Gateway REST API.
-   *
-   * Learn more about [integrations for REST APIs](https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-integration-settings.html).
+   * Add a custom integration to the API Gateway REST API. [Learn more about
+   * integrations](https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-integration-settings.html).
    *
    * @param route The path for the route.
    * @param integration The integration configuration.
    * @param args Configure the route.
    *
    * @example
-   * Add a route to trigger a Step Functions state machine execution.
+   * Add a route to trigger a Step Function state machine execution.
    *
    * ```js title="sst.config.ts"
    * api.routeIntegration("POST /run-my-state-machine", {
@@ -997,10 +994,10 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
    *   requestTemplates: {
    *     "application/json": JSON.stringify({
    *       input: "$input.json('$')",
-   *       stateMachineArn: "arn:aws:states:us-east-1:123456789012:stateMachine:MyStateMachine",
-   *     }),
+   *       stateMachineArn: "arn:aws:states:us-east-1:123456789012:stateMachine:MyStateMachine"
+   *     })
    *   },
-   *   passthroughBehavior: "when-no-match",
+   *   passthroughBehavior: "when-no-match"
    * });
    * ```
    */
@@ -1111,7 +1108,7 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
    *
    * @param args Configure the authorizer.
    * @example
-   * Add a Lambda token authorizer.
+   * For example, add a Lambda token authorizer.
    *
    * ```js title="sst.config.ts"
    * api.addAuthorizer({
@@ -1140,7 +1137,7 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
    * });
    * ```
    *
-   * Customize the authorizer.
+   * You can also customize the authorizer.
    *
    * ```js title="sst.config.ts"
    * api.addAuthorizer({
@@ -1563,28 +1560,28 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
       return all([domain, endpointType]).apply(([domain, endpointType]) =>
         domain.nameId
           ? apigateway.DomainName.get(
-              `${name}DomainName`,
-              domain.nameId,
-              {},
-              { parent },
-            )
+            `${name}DomainName`,
+            domain.nameId,
+            {},
+            { parent },
+          )
           : new apigateway.DomainName(
-              ...transform(
-                args.transform?.domainName,
-                `${name}DomainName`,
-                {
-                  domainName: domain?.name,
-                  endpointConfiguration: { types: endpointType },
-                  ...(endpointType === "REGIONAL"
-                    ? {
-                        regionalCertificateArn:
-                          certificateArn as Output<string>,
-                      }
-                    : { certificateArn: certificateArn as Output<string> }),
-                },
-                { parent },
-              ),
+            ...transform(
+              args.transform?.domainName,
+              `${name}DomainName`,
+              {
+                domainName: domain?.name,
+                endpointConfiguration: { types: endpointType },
+                ...(endpointType === "REGIONAL"
+                  ? {
+                    regionalCertificateArn:
+                      certificateArn as Output<string>,
+                  }
+                  : { certificateArn: certificateArn as Output<string> }),
+              },
+              { parent },
             ),
+          ),
       );
     }
 
