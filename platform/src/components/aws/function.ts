@@ -1390,7 +1390,7 @@ export interface FunctionArgs {
      * :::
      *
      * Useful for modifying the generated Lambda function code before it's
-     * uploaded to AWS. It can also be used for uploading the generated sourcemaps
+     * deployed to AWS. It can also be used for uploading the generated sourcemaps
      * to a service like Sentry.
      *
      * @param dir The directory where the function code is generated.
