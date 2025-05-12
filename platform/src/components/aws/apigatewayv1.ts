@@ -1175,7 +1175,8 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
    * @param name The name of the usage plan.
    * @param args Configure the usage plan.
    * @example
-   * Add a usage plan with throttle and quota. This can only be done after the routes are created and deployed.
+   * Add a usage plan with throttling and quota settings. This must be done after the
+   * routes are created and deployed.
    *
    * ```js title="sst.config.ts"
    * const plan = api.addUsagePlan("MyPlan", {
@@ -1197,10 +1198,26 @@ export class ApiGatewayV1 extends Component implements Link.Linkable {
    * const key = plan.addApiKey("MyKey");
    * ```
    *
-   * The API key needs to be enabled on each route, as by default it is disabled.
+   * Enable the API key on a specific route, as by default it is disabled.
    *
    * ```js title="sst.config.ts"
-   * api.route("GET /", "src/get.handler", { transform: { method: { apiKeyRequired: true } } });
+   * api.route("GET /", "src/get.handler", {
+   *   apiKey: true
+   * });
+   * ```
+   *
+   * Or enable the API key for all routes.
+   *
+   * ```js title="sst.config.ts"
+   * const api = new sst.aws.ApiGatewayV1("MyApi", {
+   *   transform: {
+   *     route: {
+   *       args: {
+   *         apiKey: true
+   *       }
+   *     }
+   *   }
+   * });
    * ```
    *
    * You can link the API key to other resources, like a function. Once linked,
