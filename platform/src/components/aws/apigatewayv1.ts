@@ -597,6 +597,17 @@ export interface ApiGatewayV1RouteArgs {
       }
   >;
   /**
+   * Specify if an API key is required for the route. By default, API key is not required.
+   * @default `false`
+   * @example
+   * ```js
+   * {
+   *   apiKey: true
+   * }
+   * ```
+   */
+  apiKey?: Input<boolean>;
+  /**
    * [Transform](/docs/components#transform) how this component creates its underlying
    * resources.
    */
