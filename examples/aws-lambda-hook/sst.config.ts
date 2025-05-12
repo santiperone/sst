@@ -3,7 +3,7 @@
 /**
  * ## AWS Lambda build hook
  * 
- * In this example we use hook into the Lambda function build process with
+ * In this example we hook into the Lambda function build process with
  * `hook.postbuild`.
  *
  * This is useful for modifying the generated Lambda function code before it's
