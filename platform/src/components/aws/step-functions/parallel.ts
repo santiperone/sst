@@ -88,7 +88,7 @@ export class Parallel extends State implements Nextable, Failable {
   }
 
   /**
-   * Get the permissions required for the state.
+   * @internal
    */
   public getPermissions() {
     return [

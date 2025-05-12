@@ -116,7 +116,7 @@ export class Map extends State implements Nextable, Failable {
   }
 
   /**
-   * Get the permissions required for the state.
+   * @internal
    */
   public getPermissions() {
     return [...this.processor.getPermissions(), ...super.getPermissions()];
