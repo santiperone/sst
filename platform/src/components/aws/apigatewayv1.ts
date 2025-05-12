@@ -608,7 +608,8 @@ export interface ApiGatewayV1RouteArgs {
     }
   >;
   /**
-   * Specify if an API key is required for the route. By default, API key is not required.
+   * Specify if an API key is required for the route. By default, an API key is not
+   * required.
    * @default `false`
    * @example
    * ```js
