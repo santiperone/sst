@@ -102,7 +102,7 @@ export type Plan = {
     to: string;
     cached: boolean;
     versionedSubDir?: string;
-    deepRoute?: boolean;
+    deepRoute?: string;
   }[];
   isrCache?: {
     from: string;
@@ -1295,7 +1295,7 @@ async function handler(event) {
                 // image optimization requests are prefixed with /_next/image. We cannot
                 // route by 1 level of subdirs (ie. /_next/`), so we need to route by 2
                 // levels of subdirs.
-                if (!copy.deepRoute) {
+                if (item.name !== copy.deepRoute) {
                   dirs.push(path.posix.join("/", item.name));
                   return;
                 }
