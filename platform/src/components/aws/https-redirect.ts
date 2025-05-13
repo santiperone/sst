@@ -6,6 +6,7 @@ import { useProvider } from "./helpers/provider.js";
 import { Input } from "../input.js";
 import { Dns } from "../dns.js";
 import { cloudfront, s3 } from "@pulumi/aws";
+import { CF_BLOCK_CLOUDFRONT_URL_INJECTION } from "./router.js";
 
 /**
  * Properties to configure an HTTPS Redirect
@@ -99,6 +100,22 @@ export class HttpsRedirect extends Component {
             cookies: { forward: "none" },
             queryString: false,
           },
+          functionAssociations: [
+            {
+              eventType: "viewer-request",
+              functionArn: new cloudfront.Function(
+                `${name}CloudfrontFunctionRequest`,
+                {
+                  runtime: "cloudfront-js-2.0",
+                  code: `
+import cf from "cloudfront";
+async function handler(event) {
+  ${CF_BLOCK_CLOUDFRONT_URL_INJECTION}
+}`,
+                },
+              ).arn,
+            },
+          ],
         },
         origins: [
           {
