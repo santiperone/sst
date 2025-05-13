@@ -398,7 +398,7 @@ export interface RouterUrlRouteArgs extends RouteArgs {
    * When compared to the `connectionTimeout`, this is the total time for the
    * request.
    *
-   * @default `"30 seconds"`
+   * @default `"20 seconds"`
    * @example
    * ```js
    * {
