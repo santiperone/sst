@@ -79,54 +79,74 @@ export type CatchArgs = {
 
 export interface StateArgs {
   /**
-   * The name of the state.
+   * The name of the state. This needs to be unique within the state machine.
    */
   name: string;
   /**
-   * A comment to describe the state.
+   * Optionally add a comment that describes the state.
+   * @internal
    */
   comment?: Input<string>;
   /**
-   * Specify and transform output from the state. When specified, the value overrides
-   * the state output default.
+   * Transform the output of the state. When specified, the value overrides the
+   * default output from the state.
    *
-   * The output field accepts any JSON value (object, array, string, number, boolean, null).
-   * Alternatively, you can pass in a JSONata expression directly.
+   * This takes any JSON value; object, array, string, number, boolean, null.
    *
-   * For more information, see [Transforming data with JSONata in Step Functions](https://docs.aws.amazon.com/step-functions/latest/dg/transforming-data.html).
+   * ```ts
+   * {
+   *   output: {
+   *     charged: true
+   *   }
+   * }
+   * ```
+   *
+   * Or, you can pass in a JSONata expression.
+   *
+   * ```ts
+   * {
+   *   output: {
+   *     product: "{% $states.input.product %}"
+   *   }
+   * }
+   * ```
+   *
+   * Learn more about [transforming data with JSONata](https://docs.aws.amazon.com/step-functions/latest/dg/transforming-data.html).
    */
   output?: Input<JSONata | Record<string, any>>;
   /**
-   * Used to store variables. The Assign field accepts a JSON object with key/value
-   * pairs that define variable names and their assigned values. Alternatively, you can
-   * pass in a JSONata expression directly.
+   * Store variables that can be accessed by any state down the road, instead of
+   * passing the same data through each state.
    *
-   * For more information, see [Passing data between states with variables](https://docs.aws.amazon.com/step-functions/latest/dg/workflow-variables.html).
+   * This takes a set of key/value pairs. Where the key is the name of the variable
+   * that can be accessed by any subsequent state.
    *
    * @example
    *
-   * Provide a JSON object with variable names and values.
+   * The value can be any JSON value; object, array, string, number, boolean, null.
    *
    * ```ts
    * {
    *   assign: {
    *     productName: "product1",
    *     count: 42,
-   *     available: true,
+   *     available: true
    *   }
    * }
    * ```
    *
-   * Assign values from state input and result using JSONata expressions.
+   * Or, you can pass in a JSONata expression.
    *
    * ```ts
-   *   {
-   *     assign: {
-   *       product: "{% $states.input.order.product %}",
-   *       currentPrice: "{% $states.result.Payload.current_price %}"
-   *     }
+   * {
+   *   assign: {
+   *     product: "{% $states.input.order.product %}",
+   *     currentPrice: "{% $states.result.Payload.current_price %}"
    *   }
+   * }
    * ```
+   *
+   * Learn more about [passing data between states with variables](https://docs.aws.amazon.com/step-functions/latest/dg/workflow-variables.html).
    */
   assign?: Record<string, any>;
 }
@@ -146,7 +166,7 @@ export abstract class State {
   protected _retries?: RetryArgs[];
   protected _catches?: { next: State; props: CatchArgs }[];
 
-  constructor(protected args: StateArgs) {}
+  constructor(protected args: StateArgs) { }
 
   protected addChildGraph<T extends State>(state: T): T {
     if (state._parentGraphState)

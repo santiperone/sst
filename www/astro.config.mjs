@@ -148,6 +148,21 @@ const sidebar = [
               "docs/component/aws/providers/function-environment-update",
               "docs/component/aws/apigatewayv1-integration-route",
               "docs/component/aws/kinesis-stream-lambda-subscriber",
+              {
+                label: "StepFunctions",
+                collapsed: true,
+                items: [
+                  { label: "Fail", slug: "docs/component/aws/step-functions/fail" },
+                  { label: "Map", slug: "docs/component/aws/step-functions/map" },
+                  { label: "Wait", slug: "docs/component/aws/step-functions/wait" },
+                  { label: "Task", slug: "docs/component/aws/step-functions/task" },
+                  { label: "Pass", slug: "docs/component/aws/step-functions/pass" },
+                  { label: "State", slug: "docs/component/aws/step-functions/state" },
+                  { label: "Choice", slug: "docs/component/aws/step-functions/choice" },
+                  { label: "Parallel", slug: "docs/component/aws/step-functions/parallel" },
+                  { label: "Succeed", slug: "docs/component/aws/step-functions/succeed" },
+                ],
+              },
             ],
           },
           {
