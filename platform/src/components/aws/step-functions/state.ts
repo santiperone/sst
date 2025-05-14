@@ -115,8 +115,8 @@ export interface StateArgs {
    */
   output?: Input<JSONata | Record<string, any>>;
   /**
-   * Store variables that can be accessed by any state down the road, instead of
-   * passing the same data through each state.
+   * Store variables that can be accessed by any state later in the workflow,
+   * instead of passing it through each state.
    *
    * This takes a set of key/value pairs. Where the key is the name of the variable
    * that can be accessed by any subsequent state.

@@ -550,7 +550,7 @@ export interface FunctionArgs {
    *     {
    *       actions: ["s3:GetObject", "s3:PutObject"],
    *       resources: ["arn:aws:s3:::my-bucket/*"]
-   *     },
+   *     }
    *   ]
    * }
    * ```
@@ -563,7 +563,7 @@ export interface FunctionArgs {
    *     {
    *       actions: ["s3:*"],
    *       resources: ["arn:aws:s3:::my-bucket/*"]
-   *     },
+   *     }
    *   ]
    * }
    * ```
@@ -576,7 +576,7 @@ export interface FunctionArgs {
    *     {
    *       actions: ["*"],
    *       resources: ["*"]
-   *     },
+   *     }
    *   ]
    * }
    * ```

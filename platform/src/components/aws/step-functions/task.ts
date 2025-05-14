@@ -1,6 +1,7 @@
 import { output } from "@pulumi/pulumi";
 import { Duration, toSeconds } from "../../duration";
 import { Input } from "../../input";
+import { Prettify } from "../../component";
 import { Function, FunctionPermissionArgs } from "../function";
 import {
   CatchArgs,
@@ -21,6 +22,8 @@ export interface TaskBaseArgs extends StateArgs {
   /**
    * Specifies a target role the state machine's execution role must assume before invoking the specified resource.
    * See [Task state's Credentials field](https://docs.aws.amazon.com/step-functions/latest/dg/state-task.html#task-state-example-credentials) examples.
+   *
+   * @internal
    *
    * @example
    *
@@ -44,7 +47,8 @@ export interface TaskBaseArgs extends StateArgs {
 export interface TaskArgs extends TaskBaseArgs {
   resource: Input<string>;
   /**
-   * Used to pass information to the API actions of connected resources. Values can include JSONata expressions. For more information, see [Transforming data with JSONata in Step Functions](https://docs.aws.amazon.com/step-functions/latest/dg/transforming-data.html).
+   * The arguments for the task as a record. Values can include outputs from other
+   * resources and JSONata expressions.
    *
    * @example
    *
@@ -52,13 +56,59 @@ export interface TaskArgs extends TaskBaseArgs {
    * {
    *   arguments: {
    *     product: "{% $states.input.order.product %}",
+   *     url: api.url,
    *     count: 32
    *   }
    * }
    * ```
    */
   arguments?: Input<Record<string, Input<any>>>;
-  permissions?: FunctionPermissionArgs[];
+  /**
+   * Permissions and the resources that the task needs to access. These permissions
+   * are used to create the task's IAM role.
+   *
+   * @example
+   * For example, allow the task to read and write to an S3 bucket called
+   * `my-bucket`.
+   *
+   * ```js
+   * {
+   *   permissions: [
+   *     {
+   *       actions: ["s3:GetObject", "s3:PutObject"],
+   *       resources: ["arn:aws:s3:::my-bucket/*"]
+   *     }
+   *   ]
+   * }
+   * ```
+   *
+   * Allow the task to perform all actions on an S3 bucket called `my-bucket`.
+   *
+   * ```js
+   * {
+   *   permissions: [
+   *     {
+   *       actions: ["s3:*"],
+   *       resources: ["arn:aws:s3:::my-bucket/*"]
+   *     }
+   *   ]
+   * }
+   * ```
+   *
+   * Granting the task permissions to access all resources.
+   *
+   * ```js
+   * {
+   *   permissions: [
+   *     {
+   *       actions: ["*"],
+   *       resources: ["*"]
+   *     }
+   *   ]
+   * }
+   * ```
+   */
+  permissions?: Input<Prettify<FunctionPermissionArgs>[]>;
 }
 
 /**
@@ -70,8 +120,11 @@ export interface TaskArgs extends TaskBaseArgs {
  * This component is not intended to be created directly.
  * :::
  *
- * You'll find this component returned by task-specific methods of the `StepFunctions` component
- * such as `lambdaInvoke`, `snsPublish`, `sqsSendMessage`, and more.
+ * You'll find this component returned by the `task` method of the `StepFunctions`
+ * component.
+ *
+ * It's also returned by convenience methods like `lambdaInvoke`, `snsPublish`,
+ * `sqsSendMessage`, and more.
  */
 export class Task extends State implements Nextable, Failable {
   constructor(protected args: TaskArgs) {
@@ -129,8 +182,8 @@ export class Task extends State implements Nextable, Failable {
       },
       Timeout: this.args.timeout
         ? output(this.args.timeout).apply((t) =>
-            isJSONata(t) ? t : toSeconds(t as Duration),
-          )
+          isJSONata(t) ? t : toSeconds(t as Duration),
+        )
         : undefined,
       Arguments: this.args.arguments,
     };

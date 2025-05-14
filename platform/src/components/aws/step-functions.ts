@@ -484,7 +484,7 @@ export class StepFunctions extends Component implements Link.Linkable {
 
   /**
    * A `Task` state can be used to make calls to AWS resources. We created a few
-   * convenience methods for common tasks:
+   * convenience methods for common tasks like:
    *
    * - `sst.aws.StepFunctions.lambdaInvoke` to invoke a Lambda function.
    * - `sst.aws.StepFunctions.ecsRunTask` to run an ECS task.
