@@ -54,12 +54,35 @@ export interface TaskBaseArgs extends StateArgs {
    * }
    * ```
    *
-   * @default `"60 seconds"` for HTTP tasks, `"99999999 seconds"` for all other tasks.
+   * @default `"99999999 seconds"`
    */
   timeout?: Input<JSONata | Duration>;
 }
 
 export interface TaskArgs extends TaskBaseArgs {
+  /**
+   * Specifies the maximum time a task can run before it times out with the
+   * `States.Timeout` error and fails.
+   *
+   * @example
+   * ```ts
+   * {
+   *   timeout: "10 seconds"
+   * }
+   * ```
+   *
+   * Alternatively, you can specify a JSONata expression that evaluates to a number
+   * in seconds.
+   *
+   * ```ts
+   * {
+   *   time: "{% $states.input.timeout %}"
+   * }
+   * ```
+   *
+   * @default `"60 seconds"` for HTTP tasks, `"99999999 seconds"` for all other tasks.
+   */
+  timeout?: Input<JSONata | Duration>;
   /**
    * The ARN of the task. Follows the format.
    *
@@ -84,8 +107,8 @@ export interface TaskArgs extends TaskBaseArgs {
    */
   resource: Input<string>;
   /**
-   * The arguments for the task as a record. Values can include outputs from other
-   * resources and JSONata expressions.
+   * The arguments to be passed to the APIs of the connected resources. Values can
+   * include outputs from other resources and JSONata expressions.
    *
    * @example
    *
@@ -271,7 +294,19 @@ export interface LambdaInvokeArgs extends TaskBaseArgs {
    */
   function: Function;
   /**
-   * The payload to send to the Lambda function.
+   * The payload to send to the Lambda function. Values can include outputs from
+   * other resources and JSONata expressions.
+   * @example
+   *
+   * ```ts
+   * {
+   *   payload: {
+   *     env: "{% $states.input.foo %}",
+   *     url: api.url,
+   *     key: 1
+   *   }
+   * }
+   * ```
    */
   payload?: Record<string, Input<unknown>>;
 }
@@ -286,19 +321,36 @@ export interface SnsPublishArgs extends TaskBaseArgs {
    */
   message: Input<string>;
   /**
-   * The message attributes to send to the SNS topic.
+   * The message attributes to send to the SNS topic. Values can include outputs
+   * from other resources and JSONata expressions.
+   * @example
+   *
+   * ```ts
+   * {
+   *   messageAttributes: {
+   *     env: "{% $states.input.foo %}",
+   *     url: api.url,
+   *     key: 1
+   *   }
+   * }
+   * ```
    */
   messageAttributes?: Input<Record<string, Input<string>>>;
   /**
-   * The message deduplication ID to send to the SNS topic.
+   * The message deduplication ID to send to the SNS topic. This applies to FIFO
+   * topics only.
+   *
+   * This is a string that's used to deduplicate messages sent within the minimum
+   * 5 minute interval.
    */
   messageDeduplicationId?: Input<string>;
   /**
-   * The message group ID to send to the SNS topic.
+   * The message group ID to send to the SNS topic. This only applies to FIFO
+   * topics.
    */
   messageGroupId?: Input<string>;
   /**
-   * The subject of the message to send to the SNS topic.
+   * An optional subject line when the message is delivered to email endpoints.
    */
   subject?: Input<string>;
 }
@@ -309,37 +361,67 @@ export interface SqsSendMessageArgs extends TaskBaseArgs {
    */
   queue: Queue;
   /**
-   * The message body to send to the SQS queue.
+   * The message body to send to the SQS queue. The maximum size is 256KB.
    */
   messageBody: Input<string>;
   /**
-   * The message attributes to send to the SQS queue.
+   * The message attributes to send to the SQS queue. Values can include outputs
+   * from other resources and JSONata expressions.
+   * @example
+   *
+   * ```ts
+   * {
+   *   messageAttributes: {
+   *     env: "{% $states.input.foo %}",
+   *     url: api.url,
+   *     key: 1
+   *   }
+   * }
+   * ```
    */
   messageAttributes?: Input<Record<string, Input<string>>>;
   /**
-   * The message deduplication ID to send to the SQS queue.
+   * The message deduplication ID to send to the SQS queue. This applies to FIFO
+   * queues only.
+   *
+   * This is a string that's used to deduplicate messages sent within the minimum
+   * 5 minute interval.
    */
   messageDeduplicationId?: Input<string>;
   /**
-   * The message group ID to send to the SQS queue.
+   * The message group ID to send to the SQS queue. This only applies to FIFO
+   * queues.
    */
   messageGroupId?: Input<string>;
 }
 
 export interface EcsRunTaskArgs extends TaskBaseArgs {
   /**
-   * The `Task` component to run.
+   * The ECS `Task` to run.
+   *
+   * ```ts title="sst.config.ts" {6}
+   * const myCluster = new sst.aws.Cluster("MyCluster");
+   * const myTask = new sst.aws.Task("MyTask", { cluster: myCluster });
+   *
+   * sst.aws.StepFunctions.ecsRunTask({
+   *   name: "RunTask",
+   *   task: myTask
+   * });
+   * ```
    */
   task: ServiceTask;
   /**
-   * The environment variables to apply to the ECS task.
+   * The environment variables to apply to the ECS task. Values can include outputs
+   * from other resources and JSONata expressions.
    * @example
    *
    * ```ts
    * {
    *   environment: {
    *     MY_ENV: "{% $states.input.foo %}",
-   *   },
+   *     MY_URL: api.url,
+   *     MY_KEY: 1
+   *   }
    * }
    * ```
    */
@@ -348,7 +430,7 @@ export interface EcsRunTaskArgs extends TaskBaseArgs {
 
 export interface EventBridgePutEventsArgs extends TaskBaseArgs {
   /**
-   * The events to put to the EventBridge event bus.
+   * A list of events to send to the EventBridge.
    *
    * @example
    * ```ts
@@ -374,18 +456,28 @@ export interface EventBridgePutEventsArgs extends TaskBaseArgs {
      */
     bus: Bus;
     /**
-     * The source of the event, which identifies the service or component that generated it.
-     * Can be a static string or a JSONata expression.
+     * The source of the event. This string or JSONata expression identifies the
+     * service or component that generated it.
      */
     source?: Input<string>;
     /**
-     * The detail type of the event, which helps subscribers filter and route events.
-     * Can be a static string or a JSONata expression.
+     * The detail type of the event. This helps subscribers filter and route events.
+     * This can be a string or JSONata expression.
      */
     detailType?: Input<string>;
     /**
      * The event payload containing the event details as a JSON object.
-     * Values can include JSONata expressions for dynamic content.
+     * Values can also include a JSONata expression.
+     *
+     * @example
+     * ```ts
+     * {
+     *   detail: {
+     *     type: "order",
+     *     message: "{% $states.input.message %}"
+     *   }
+     * }
+     * ```
      */
     detail?: Input<Record<string, Input<unknown>>>;
   }[];

@@ -43,36 +43,47 @@ export interface Failable {
 
 export interface RetryArgs {
   /**
-   * The errors that are being retried.
+   * A list of errors that are being retried. By default, this retries all errors.
    *
-   * @default ["States.ALL"]
+   * @default `["States.ALL"]`
    */
   errors?: string[];
   /**
-   * The interval between retries in seconds.
+   * The amount of time to wait before the first retry attempt. The maximum value is
+   * `99999999 seconds`.
    *
-   * @default "1 second"
+   * Following attempts will retry based on the `backoffRate` multiplier.
+   *
+   * @default `"1 second"`
    */
   interval?: Duration;
   /**
-   * The maximum number of retries.
+   * The maximum number of retries before it falls back to the normal error handling.
    *
-   * @default 3
+   * A value of `0` means the error won't be retried. The maximum value is
+   * `99999999`.
+   *
+   * @default `3`
    */
   maxAttempts?: number;
   /**
-   * The backoff rate.
+   * The backoff rate. This is a multiplier that increases the interval between
+   * retries.
    *
-   * @default 2
+   * For example, if the interval is `1 second` and the backoff rate is `2`, the
+   * first retry will happen after `1 second`, and the second retry will happen
+   * after `2 * 1 second = 2 seconds`.
+   *
+   * @default `2`
    */
   backoffRate?: number;
 };
 
 export interface CatchArgs {
   /**
-   * The errors that are being caught.
+   * A list of errors that are being caught. By default, this catches all errors.
    *
-   * @default ["States.ALL"]
+   * @default `["States.ALL"]`
    */
   errors?: string[];
 };
@@ -152,11 +163,14 @@ export interface StateArgs {
 }
 
 /**
- * The `State` class is the base class for all states in a state machine.
+ * The `State` class is the base class for all states in `StepFunctions` state
+ * machine.
  *
  * :::note
  * This component is not intended to be created directly.
  * :::
+ *
+ * This is used for reference only.
  */
 export abstract class State {
   protected _parentGraphState?: State; // only used for Parallel, Map
