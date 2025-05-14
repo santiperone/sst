@@ -145,7 +145,7 @@ export interface TaskArgs extends TaskBaseArgs {
    * }
    * ```
    */
-  permissions?: Input<Prettify<FunctionPermissionArgs>[]>;
+  permissions?: Prettify<FunctionPermissionArgs>[];
 }
 
 /**
@@ -257,8 +257,8 @@ export class Task extends State implements Nextable, Failable {
       },
       Timeout: this.args.timeout
         ? output(this.args.timeout).apply((t) =>
-          isJSONata(t) ? t : toSeconds(t as Duration),
-        )
+            isJSONata(t) ? t : toSeconds(t as Duration),
+          )
         : undefined,
       Arguments: this.args.arguments,
     };
