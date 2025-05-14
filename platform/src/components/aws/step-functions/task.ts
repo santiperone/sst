@@ -36,8 +36,23 @@ export interface TaskBaseArgs extends StateArgs {
   role?: Input<string>;
   /**
    * Specifies the maximum time a task can run before it times out with the
-   * `States.Timeout` error and fails. Alternatively, you can specify a JSONata
-   * expression that evaluates to a number in seconds.
+   * `States.Timeout` error and fails.
+   *
+   * @example
+   * ```ts
+   * {
+   *   timeout: "10 seconds"
+   * }
+   * ```
+   *
+   * Alternatively, you can specify a JSONata expression that evaluates to a number
+   * in seconds.
+   *
+   * ```ts
+   * {
+   *   time: "{% $states.input.timeout %}"
+   * }
+   * ```
    *
    * @default `"60 seconds"` for HTTP tasks, `"99999999 seconds"` for all other tasks.
    */
@@ -45,6 +60,28 @@ export interface TaskBaseArgs extends StateArgs {
 }
 
 export interface TaskArgs extends TaskBaseArgs {
+  /**
+   * The ARN of the task. Follows the format.
+   *
+   * ```ts
+   * {
+   *   resource: "arn:aws:states:::service:task_type:name"
+   * }
+   * ```
+   *
+   * @example
+   *
+   * For example, to start an AWS CodeBuild build.
+   *
+   * ```ts
+   * {
+   *   resource: "arn:aws:states:::codebuild:startBuild"
+   * }
+   * ```
+   *
+   * Learn more about [task ARNs](https://docs.aws.amazon.com/step-functions/latest/dg/state-task.html#task-types).
+   *
+   */
   resource: Input<string>;
   /**
    * The arguments for the task as a record. Values can include outputs from other
@@ -133,30 +170,68 @@ export class Task extends State implements Nextable, Failable {
 
   /**
    * Add a next state to the `Task` state. If the state completes successfully,
-   * continue execution with the given state.
+   * continue execution to the given `state`.
    *
    * @param state The state to transition to.
+   *
+   * @example
+   *
+   * ```ts title="sst.config.ts"
+   * sst.aws.StepFunctions.task({
+   *   // ...
+   * })
+   * .next(state);
+   * ```
    */
   public next<T extends State>(state: T): T {
     return this.addNext(state);
   }
 
   /**
-   * Add retry behavior to the `Task` state. If the state fails with any of the
-   * specified errors, retry execution using the specified parameters.
+   * Add a retry behavior to the `Task` state. If the state fails with any of the
+   * specified errors, retry the execution.
    *
-   * @param args Optional retry properties to customize retry behavior.
+   * @param args Properties to define the retry behavior.
+   *
+   * @example
+   *
+   * This defaults to.
+   *
+   * ```ts title="sst.config.ts" {5-8}
+   * sst.aws.StepFunctions.task({
+   *   // ...
+   * })
+   * .retry({
+   *   errors: ["States.ALL"],
+   *   interval: "1 second",
+   *   maxAttempts: 3,
+   *   backoffRate: 2
+   * });
+   * ```
    */
   public retry(args?: RetryArgs) {
     return this.addRetry(args);
   }
 
   /**
-   * Add catch behavior to the `Task` state. If the state fails with any of the
-   * specified errors, continue execution with the given state.
+   * Add a catch behavior to the `Task` state. So if the state fails with any of the
+   * specified errors, it'll continue execution to the given `state`.
    *
    * @param state The state to transition to on error.
-   * @param args Optional catch properties to customize error handling.
+   * @param args Properties to customize error handling.
+   *
+   * @example
+   *
+   * This defaults to.
+   *
+   * ```ts title="sst.config.ts" {5}
+   * sst.aws.StepFunctions.task({
+   *   // ...
+   * })
+   * .catch({
+   *   errors: ["States.ALL"]
+   * });
+   * ```
    */
   public catch(state: State, args: CatchArgs = {}) {
     return this.addCatch(state, args);

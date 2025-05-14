@@ -7,6 +7,7 @@ export interface WaitArgs extends StateArgs {
   /**
    * Specify the amount of time to wait before starting the next state.
    * @example
+   *
    * ```ts
    * {
    *   time: "10 seconds"
@@ -15,6 +16,7 @@ export interface WaitArgs extends StateArgs {
    *
    * Alternatively, you can specify a JSONata expression that evaluates to a number
    * in seconds.
+   *
    * ```ts
    * {
    *   time: "{% $states.input.wait_time %}"

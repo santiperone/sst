@@ -41,7 +41,7 @@ export interface Failable {
   catch: (state: State, props?: CatchArgs) => State;
 }
 
-export type RetryArgs = {
+export interface RetryArgs {
   /**
    * The errors that are being retried.
    *
@@ -68,7 +68,7 @@ export type RetryArgs = {
   backoffRate?: number;
 };
 
-export type CatchArgs = {
+export interface CatchArgs {
   /**
    * The errors that are being caught.
    *
