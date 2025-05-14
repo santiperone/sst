@@ -45,6 +45,7 @@ import { DistributionInvalidation } from "./providers/distribution-invalidation.
 import { toSeconds } from "../duration.js";
 import { KvRoutesUpdate } from "./providers/kv-routes-update.js";
 import { CONSOLE_URL, getQuota } from "./helpers/quota.js";
+import { toPosix } from "../path.js";
 
 const supportedRegions = {
   "af-south-1": { lat: -33.9249, lon: 18.4241 }, // Cape Town, South Africa
@@ -1183,7 +1184,7 @@ async function handler(event) {
               {
                 files: "**",
                 ignore: copy.versionedSubDir
-                  ? path.posix.join(copy.versionedSubDir, "**")
+                  ? toPosix(path.join(copy.versionedSubDir, "**"))
                   : undefined,
                 cacheControl:
                   assets?.nonVersionedFilesCacheHeader ??
@@ -1193,7 +1194,7 @@ async function handler(event) {
               ...(copy.versionedSubDir
                 ? [
                     {
-                      files: path.posix.join(copy.versionedSubDir, "**"),
+                      files: toPosix(path.join(copy.versionedSubDir, "**")),
                       cacheControl:
                         assets?.versionedFilesCacheHeader ??
                         `public,max-age=${versionedFilesTTL},immutable`,
@@ -1224,10 +1225,12 @@ async function handler(event) {
                       .digest("hex");
                     return {
                       source,
-                      key: path.posix.join(
-                        copy.to,
-                        route?.pathPrefix?.replace(/^\//, "") ?? "",
-                        file,
+                      key: toPosix(
+                        path.join(
+                          copy.to,
+                          route?.pathPrefix?.replace(/^\//, "") ?? "",
+                          file,
+                        ),
                       ),
                       hash,
                       cacheControl: fileOption.cacheControl,
@@ -1286,7 +1289,7 @@ async function handler(event) {
                 withFileTypes: true,
               }).forEach((item) => {
                 if (item.isFile()) {
-                  kvEntries[path.posix.join("/", item.name)] = "s3";
+                  kvEntries[toPosix(path.join("/", item.name))] = "s3";
                   return;
                 }
 
@@ -1296,7 +1299,7 @@ async function handler(event) {
                 // route by 1 level of subdirs (ie. /_next/`), so we need to route by 2
                 // levels of subdirs.
                 if (item.name !== copy.deepRoute) {
-                  dirs.push(path.posix.join("/", item.name));
+                  dirs.push(toPosix(path.join("/", item.name)));
                   return;
                 }
 
@@ -1304,11 +1307,12 @@ async function handler(event) {
                   withFileTypes: true,
                 }).forEach((subItem) => {
                   if (subItem.isFile()) {
-                    kvEntries[path.posix.join("/", item.name, subItem.name)] =
-                      "s3";
+                    kvEntries[
+                      toPosix(path.join("/", item.name, subItem.name))
+                    ] = "s3";
                     return;
                   }
-                  dirs.push(path.posix.join("/", item.name, subItem.name));
+                  dirs.push(toPosix(path.join("/", item.name, subItem.name)));
                 });
               });
             });
@@ -1396,7 +1400,7 @@ async function handler(event) {
             cachedS3Files.forEach((item) => {
               if (!item.versionedSubDir) return;
               invalidationPaths.push(
-                path.posix.join("/", item.to, item.versionedSubDir, "*"),
+                toPosix(path.join("/", item.to, item.versionedSubDir, "*")),
               );
             });
           } else {
@@ -1434,7 +1438,7 @@ async function handler(event) {
               if (invalidation.paths !== "versioned") {
                 globSync("**", {
                   ignore: item.versionedSubDir
-                    ? [path.posix.join(item.versionedSubDir, "**")]
+                    ? [toPosix(path.join(item.versionedSubDir, "**"))]
                     : undefined,
                   dot: true,
                   nodir: true,
