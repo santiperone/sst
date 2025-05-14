@@ -465,7 +465,13 @@ export interface FunctionArgs {
    * If a function is connected to another service, the request will time out based on the service's limits.
    * :::
    *
-   * While the maximum timeout is 15 minutes, if a function is connected to other services, it'll time out based on those limits. API Gateway for example has a timeout of 30 seconds. So even if the function has a timeout of 15 minutes, the API request will time out after 30 seconds.
+   * While the maximum timeout is 15 minutes, if a function is connected to other
+   * services, it'll time out based on those limits.
+   *
+   * - API Gateway has a timeout of 30 seconds. So even if the function has a
+   *   timeout of 15 minutes, the API request will time out after 30 seconds.
+   * - CloudFront has a default timeout of 60 seconds. You can have this limit
+   *   increased by [contacting AWS Support](https://console.aws.amazon.com/support/home#/case/create?issueType=service-limit-increase).
    *
    * @default `"20 seconds"`
    * @example

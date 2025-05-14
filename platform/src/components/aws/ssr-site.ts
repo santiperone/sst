@@ -124,50 +124,50 @@ export interface SsrSiteArgs extends BaseSsrSiteArgs {
   invalidation?: Input<
     | false
     | {
-        /**
-         * Configure if `sst deploy` should wait for the CloudFront cache invalidation to finish.
-         *
-         * :::tip
-         * For non-prod environments it might make sense to pass in `false`.
-         * :::
-         *
-         * Waiting for this process to finish ensures that new content will be available after the deploy finishes. However, this process can sometimes take more than 5 mins.
-         * @default `false`
-         * @example
-         * ```js
-         * {
-         *   invalidation: {
-         *     wait: true
-         *   }
-         * }
-         * ```
-         */
-        wait?: Input<boolean>;
-        /**
-         * The paths to invalidate.
-         *
-         * You can either pass in an array of glob patterns to invalidate specific files. Or you can use one of these built-in options:
-         * - `all`: All files will be invalidated when any file changes
-         * - `versioned`: Only versioned files will be invalidated when versioned files change
-         *
-         * :::note
-         * Each glob pattern counts as a single invalidation. Whereas, invalidating
-         * `/*` counts as a single invalidation.
-         * :::
-         * @default `"all"`
-         * @example
-         * Invalidate the `index.html` and all files under the `products/` route.
-         * ```js
-         * {
-         *   invalidation: {
-         *     paths: ["/index.html", "/products/*"]
-         *   }
-         * }
-         * ```
-         * This counts as two invalidations.
-         */
-        paths?: Input<"all" | "versioned" | string[]>;
-      }
+      /**
+       * Configure if `sst deploy` should wait for the CloudFront cache invalidation to finish.
+       *
+       * :::tip
+       * For non-prod environments it might make sense to pass in `false`.
+       * :::
+       *
+       * Waiting for this process to finish ensures that new content will be available after the deploy finishes. However, this process can sometimes take more than 5 mins.
+       * @default `false`
+       * @example
+       * ```js
+       * {
+       *   invalidation: {
+       *     wait: true
+       *   }
+       * }
+       * ```
+       */
+      wait?: Input<boolean>;
+      /**
+       * The paths to invalidate.
+       *
+       * You can either pass in an array of glob patterns to invalidate specific files. Or you can use one of these built-in options:
+       * - `all`: All files will be invalidated when any file changes
+       * - `versioned`: Only versioned files will be invalidated when versioned files change
+       *
+       * :::note
+       * Each glob pattern counts as a single invalidation. Whereas, invalidating
+       * `/*` counts as a single invalidation.
+       * :::
+       * @default `"all"`
+       * @example
+       * Invalidate the `index.html` and all files under the `products/` route.
+       * ```js
+       * {
+       *   invalidation: {
+       *     paths: ["/index.html", "/products/*"]
+       *   }
+       * }
+       * ```
+       * This counts as two invalidations.
+       */
+      paths?: Input<"all" | "versioned" | string[]>;
+    }
   >;
   /**
    * Regions that the server function will be deployed to.
@@ -239,14 +239,20 @@ export interface SsrSiteArgs extends BaseSsrSiteArgs {
     /**
      * The maximum amount of time the server function can run.
      *
-     * While Lambda supports timeouts up to 900 seconds, AWS CloudFront imposes a default
-     * limit of 60 seconds before timing out. To increase the default 60 second timeout,
-     * you can contact AWS Support to request a limit increase - https://console.aws.amazon.com/support/home#/case/create?issueType=service-limit-increase
+     * While Lambda supports timeouts up to 900 seconds, your requests are served
+     * through AWS CloudFront. And it has a default limit of 60 seconds.
      *
-     * :::note
-     * If you need a longer timeout than 60 seconds, you can contact AWS Support to
-     * request a limit increase.
+     * You can increase this for your account by contacting AWS Support and
+     * [requesting a limit increase](https://console.aws.amazon.com/support/home#/case/create?issueType=service-limit-increase).
+     *
+     * :::tip
+     * If you need a timeout longer than 60 seconds, you'll need to request a
+     * limit increase.
      * :::
+     *
+     * If you set a timeout that's longer than 60 seconds, this component will
+     * check if your account can allow for that timeout. If not, it'll throw an
+     * error.
      *
      * @default `"20 seconds"`
      * @example
@@ -1152,11 +1158,11 @@ async function handler(event) {
         `  });`,
         ...(streaming
           ? [
-              `  const response = await p;`,
-              `  responseStream.write(JSON.stringify(response));`,
-              `  responseStream.end();`,
-              `  return;`,
-            ]
+            `  const response = await p;`,
+            `  responseStream.write(JSON.stringify(response));`,
+            `  responseStream.end();`,
+            `  return;`,
+          ]
           : [`  return p;`]),
         `}`,
       ].join("\n");
@@ -1193,13 +1199,13 @@ async function handler(event) {
               // versioned files
               ...(copy.versionedSubDir
                 ? [
-                    {
-                      files: toPosix(path.join(copy.versionedSubDir, "**")),
-                      cacheControl:
-                        assets?.versionedFilesCacheHeader ??
-                        `public,max-age=${versionedFilesTTL},immutable`,
-                    },
-                  ]
+                  {
+                    files: toPosix(path.join(copy.versionedSubDir, "**")),
+                    cacheControl:
+                      assets?.versionedFilesCacheHeader ??
+                      `public,max-age=${versionedFilesTTL},immutable`,
+                  },
+                ]
                 : []),
               ...(assets?.fileOptions ?? []),
             ];
@@ -1327,9 +1333,9 @@ async function handler(event) {
               },
               image: imageOptimizerUrl
                 ? {
-                    host: new URL(imageOptimizerUrl!).host,
-                    route: plan.imageOptimizer!.prefix,
-                  }
+                  host: new URL(imageOptimizerUrl!).host,
+                  route: plan.imageOptimizer!.prefix,
+                }
                 : undefined,
               servers: servers.map((s) => [
                 new URL(s.url).host,
