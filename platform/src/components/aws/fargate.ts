@@ -27,6 +27,7 @@ import { imageBuilder } from "./helpers/container-builder";
 import { toNumber } from "../cpu";
 import { toSeconds } from "../duration";
 import { Cluster } from "./cluster";
+import { physicalName } from "../naming";
 
 export const supportedCpus = {
   "0.25 vCPU": 256,
@@ -813,7 +814,10 @@ export function normalizeContainers(
             ...logging,
             retention: logging?.retention ?? "1 month",
             name:
-              logging?.name ?? `/sst/cluster/${clusterName}/${name}/${v.name}`,
+              logging?.name ??
+              // In the case of shared Cluster across stage, log group name can thrash
+              // if Task name is the same. Need to suffix the task name with random hash.
+              `/sst/cluster/${clusterName}/${physicalName(64, name)}/${v.name}`,
           }),
         );
       }
