@@ -242,17 +242,17 @@ export interface SsrSiteArgs extends BaseSsrSiteArgs {
      * While Lambda supports timeouts up to 900 seconds, your requests are served
      * through AWS CloudFront. And it has a default limit of 60 seconds.
      *
-     * You can increase this for your account by contacting AWS Support and
-     * [requesting a limit increase](https://console.aws.amazon.com/support/home#/case/create?issueType=service-limit-increase).
+     * If you set a timeout that's longer than 60 seconds, this component will
+     * check if your account can allow for that timeout. If not, it'll throw an
+     * error.
      *
      * :::tip
      * If you need a timeout longer than 60 seconds, you'll need to request a
      * limit increase.
      * :::
      *
-     * If you set a timeout that's longer than 60 seconds, this component will
-     * check if your account can allow for that timeout. If not, it'll throw an
-     * error.
+     * You can increase this to 180 seconds for your account by contacting AWS
+     * Support and [requesting a limit increase](https://console.aws.amazon.com/support/home#/case/create?issueType=service-limit-increase).
      *
      * @default `"20 seconds"`
      * @example
@@ -263,6 +263,9 @@ export interface SsrSiteArgs extends BaseSsrSiteArgs {
      *   }
      * }
      * ```
+     *
+     * If you need a timeout longer than what CloudFront supports, we recommend
+     * using a separate Lambda `Function` with the `url` enabled instead.
      */
     timeout?: FunctionArgs["timeout"];
     /**
