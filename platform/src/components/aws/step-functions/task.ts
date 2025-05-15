@@ -18,7 +18,7 @@ import { Queue } from "../queue";
 import { Task as ServiceTask } from "../task";
 import { Bus } from "../bus";
 
-export interface TaskBaseArgs extends StateArgs {
+interface TaskBaseArgs extends StateArgs {
   /**
    * Specifies a target role the state machine's execution role must assume before invoking the specified resource.
    * See [Task state's Credentials field](https://docs.aws.amazon.com/step-functions/latest/dg/state-task.html#task-state-example-credentials) examples.
