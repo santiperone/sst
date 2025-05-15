@@ -345,7 +345,7 @@ export class Cdn extends Component {
     }
 
     function createSsl() {
-      if (!domain) return;
+      if (!domain) return output(undefined);
 
       return domain.cert.apply((cert) => {
         if (cert) return domain.cert;
@@ -389,15 +389,17 @@ export class Cdn extends Component {
                   ...domain.aliases,
                 ])
               : [],
-            viewerCertificate: certificateArn
-              ? {
-                  acmCertificateArn: certificateArn,
-                  sslSupportMethod: "sni-only",
-                  minimumProtocolVersion: "TLSv1.2_2021",
-                }
-              : {
-                  cloudfrontDefaultCertificate: true,
-                },
+            viewerCertificate: certificateArn.apply((arn) =>
+              arn
+                ? {
+                    acmCertificateArn: arn,
+                    sslSupportMethod: "sni-only",
+                    minimumProtocolVersion: "TLSv1.2_2021",
+                  }
+                : {
+                    cloudfrontDefaultCertificate: true,
+                  },
+            ),
             waitForDeployment: false,
             tags: args.tags,
           },
