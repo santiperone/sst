@@ -1,3 +1,4 @@
+import { Output, output } from "@pulumi/pulumi";
 import { Input } from "../../input";
 import {
   CatchArgs,
@@ -10,6 +11,31 @@ import {
 } from "./state";
 
 export interface MapArgs extends StateArgs {
+  /**
+   * The processing mode for the `Map` state.
+   *
+   * The `inline` mode is the default and has limited concurrency. In this mode, each item
+   * in the `Map` state runs as a part of the current workflow.
+   *
+   * The `standard` and `express` mode have high concurrency. In these mode, each item in
+   * the `Map` state runs as a child workflow. This enables high concurrency of up to 10,000
+   * parallel child workflows. Each child workflow has its own, separate execution history.
+   * - In `standard` mode, each child runs as a StepFunctions Standard workflow.
+   * - In `express` mode, each child runs as a StepFunctions Express workflow.
+   *
+   * :::note
+   * `Map` state with `standard` or `express` mode is not supported in `express` type StepFunctions.
+   * :::
+   *
+   * @default `"inline"`
+   * @example
+   * ```js
+   * {
+   *   type: "express"
+   * }
+   * ```
+   */
+  mode?: Input<"inline" | "standard" | "express">;
   /**
    * The list of items to process.
    *
@@ -32,7 +58,7 @@ export interface MapArgs extends StateArgs {
    */
   items?: Input<JSONata | any[]>;
   /**
-   * Reformat the values of the input array items before they're passed on to each 
+   * Reformat the values of the input array items before they're passed on to each
    * state iteration.
    *
    * For example, you can pass in what you want the fields to be.
@@ -129,11 +155,13 @@ export interface MapArgs extends StateArgs {
  */
 export class Map extends State implements Nextable, Failable {
   private processor: State;
+  private mode: Output<"inline" | "standard" | "express">;
 
   constructor(protected args: MapArgs) {
     super(args);
     this.processor = args.processor.getHead();
     this.addChildGraph(this.processor);
+    this.mode = output(args.mode ?? "inline");
   }
 
   /**
@@ -221,9 +249,11 @@ export class Map extends State implements Nextable, Failable {
       Items: this.args.items,
       ItemSelector: this.args.itemSelector,
       ItemProcessor: {
-        ProcessorConfig: {
-          Mode: "INLINE",
-        },
+        ProcessorConfig: this.mode.apply((mode) =>
+          mode === "inline"
+            ? { Mode: "INLINE" }
+            : { Mode: "DISTRIBUTED", ExecutionType: mode.toUpperCase() },
+        ),
         StartAt: this.processor.name,
         States: this.processor.serialize(),
       },

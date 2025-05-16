@@ -288,6 +288,13 @@ export class StepFunctions extends Component implements Link.Linkable {
                     ],
                     resources: ["*"],
                   },
+                  {
+                    actions: [
+                      "states:StartExecution",
+                      "states:DescribeExecution",
+                    ],
+                    resources: ["*"],
+                  },
                   ...args.definition.getRoot().getPermissions(),
                 ],
               }).json,
