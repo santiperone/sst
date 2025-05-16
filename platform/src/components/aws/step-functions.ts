@@ -775,6 +775,14 @@ export class StepFunctions extends Component implements Link.Linkable {
             ),
           ],
         }),
+        permission({
+          actions: [
+            "states:SendTaskSuccess",
+            "states:SendTaskFailure",
+            "states:SendTaskHeartbeat",
+          ],
+          resources: ["*"],
+        }),
       ],
     };
   }

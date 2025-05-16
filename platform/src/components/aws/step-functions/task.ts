@@ -1,4 +1,4 @@
-import { output } from "@pulumi/pulumi";
+import { all, Output, output } from "@pulumi/pulumi";
 import { Duration, toSeconds } from "../../duration";
 import { Input } from "../../input";
 import { Prettify } from "../../component";
@@ -24,6 +24,34 @@ import { Task as ServiceTask } from "../task";
 import { Bus } from "../bus";
 
 interface TaskBaseArgs extends StateArgs {
+  /**
+   * Specifies how a `Task` state integrates with the specified AWS service.
+   *
+   * The `response` integration is the default. The `Task` state calls a service and
+   * progress to the next state immediately after it gets an HTTP response.
+   *
+   * In `sync` integration, the `Task` state waits for the service to complete the
+   * job (ie. Amazon ECS task, AWS CodeBuild build, etc.) before progressing to
+   * the next state.
+   *
+   * In `token` integration, the `Task` state calls a service and pauses until a task token
+   * is returned. To resume execution, call the [`SendTaskSuccess`](https://docs.aws.amazon.com/step-functions/latest/apireference/API_SendTaskSuccess.html)
+   * or [`SendTaskFailure`](https://docs.aws.amazon.com/step-functions/latest/apireference/API_SendTaskFailure.html)
+   * API with the task token.
+   *
+   * Learn more about [service integration patterns](https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.html).
+   *
+   * @default `"response"`
+   *
+   * @example
+   *
+   * ```ts
+   * {
+   *   integration: "token"
+   * }
+   * ```
+   */
+  integration?: Input<"response" | "sync" | "token">;
   /**
    * Specifies a target role the state machine's execution role must assume before invoking the specified resource.
    * See [Task state's Credentials field](https://docs.aws.amazon.com/step-functions/latest/dg/state-task.html#task-state-example-credentials) examples.
@@ -192,8 +220,21 @@ export interface TaskArgs extends TaskBaseArgs {
  * `sqsSendMessage`, and more.
  */
 export class Task extends State implements Nextable, Failable {
+  private resource: Output<string>;
+
   constructor(protected args: TaskArgs) {
     super(args);
+
+    const integration = output(this.args.integration ?? "response");
+    this.resource = all([this.args.resource, integration]).apply(
+      ([resource, integration]) => {
+        if (integration === "sync" && !resource.endsWith(".sync"))
+          return `${resource}.sync`;
+        if (integration === "token" && !resource.endsWith(".waitForTaskToken"))
+          return `${resource}.waitForTaskToken`;
+        return resource;
+      },
+    );
   }
 
   /**
@@ -279,7 +320,7 @@ export class Task extends State implements Nextable, Failable {
     return {
       Type: "Task",
       ...super.toJSON(),
-      Resource: this.args.resource,
+      Resource: this.resource,
       Credentials: this.args.role && {
         RoleArn: this.args.role,
       },
@@ -368,7 +409,7 @@ export interface SqsSendMessageArgs extends TaskBaseArgs {
   /**
    * The message body to send to the SQS queue. The maximum size is 256KB.
    */
-  messageBody: Input<string>;
+  messageBody: Input<string | Record<string, Input<unknown>>>;
   /**
    * The message attributes to send to the SQS queue. Values can include outputs
    * from other resources and JSONata expressions.
