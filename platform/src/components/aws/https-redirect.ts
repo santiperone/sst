@@ -144,6 +144,7 @@ export class HttpsRedirect extends Component {
 import cf from "cloudfront";
 async function handler(event) {
   ${CF_BLOCK_CLOUDFRONT_URL_INJECTION}
+  return event.request;
 }`,
                   },
                 ).arn,
