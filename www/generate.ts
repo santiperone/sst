@@ -957,87 +957,22 @@ function renderType(
         type.name
       }</code>](#${type.name.toLowerCase()})`;
     }
+
     // types in different doc
-    const externalModule = {
-      ApiGatewayV1ApiKey: "apigatewayv1-api-key",
-      ApiGatewayV1ApiKeyArgs: "apigatewayv1-api-key",
-      ApiGatewayV1Authorizer: "apigatewayv1-authorizer",
-      ApiGatewayV1IntegrationArgs: "apigatewayv1",
-      ApiGatewayV1IntegrationRoute: "apigatewayv1-integration-route",
-      ApiGatewayV1LambdaRoute: "apigatewayv1-lambda-route",
-      ApiGatewayV1UsagePlan: "apigatewayv1-usage-plan",
-      ApiGatewayV2Authorizer: "apigatewayv2-authorizer",
-      ApiGatewayV2LambdaRoute: "apigatewayv2-lambda-route",
-      ApiGatewayV2PrivateRoute: "apigatewayv2-private-route",
-      ApiGatewayV2UrlRoute: "apigatewayv2-url-route",
-      ApiGatewayWebSocketRoute: "apigateway-websocket-route",
-      AppSyncDataSource: "app-sync-data-source",
-      AppSyncFunction: "app-sync-function",
-      AppSyncResolver: "app-sync-resolver",
-      Bucket: "bucket",
-      BucketArgs: "bucket",
-      BucketNotification: "bucket-notification",
-      Bus: "bus",
-      BusLambdaSubscriber: "bus-lambda-subscriber",
-      BusQueueSubscriber: "bus-queue-subscriber",
-      Cdn: "cdn",
-      CdnArgs: "cdn",
-      Cluster: "cluster",
-      CognitoIdentityProvider: "cognito-identity-provider",
-      CognitoUserPoolClient: "cognito-user-pool-client",
-      Dynamo: "dynamo",
-      DynamoLambdaSubscriber: "dynamo-lambda-subscriber",
-      Efs: "efs",
-      Function: "function",
-      FunctionArgs: "function",
-      FunctionEnvironmentUpdate: "providers/function-environment-update",
-      FunctionPermissionArgs: "function",
-      Mysql: "mysql",
-      MysqlArgs: "mysql",
-      Postgres: "postgres",
-      PostgresArgs: "postgres",
-      Router: "router",
-      Queue: "queue",
-      QueueLambdaSubscriber: "queue-lambda-subscriber",
-      KinesisStreamLambdaSubscriber: "kinesis-stream-lambda-subscriber",
-      RealtimeLambdaSubscriber: "realtime-lambda-subscriber",
-      Service: "service",
-      SnsTopic: "sns-topic",
-      SnsTopicLambdaSubscriber: "sns-topic-lambda-subscriber",
-      SnsTopicQueueSubscriber: "sns-topic-queue-subscriber",
-      StaticSite: "static-site",
-      Task: "task",
-      Vpc: "vpc",
-      State: "step-functions/state",
-      CatchArgs: "step-functions/state",
-      RetryArgs: "step-functions/state",
-      TaskArgs: "step-functions/task",
-      Choice: "step-functions/choice",
-      ChoiceArgs: "step-functions/choice",
-      Fail: "step-functions/fail",
-      FailArgs: "step-functions/fail",
-      Map: "step-functions/map",
-      MapArgs: "step-functions/map",
-      Parallel: "step-functions/parallel",
-      ParallelArgs: "step-functions/parallel",
-      Pass: "step-functions/pass",
-      PassArgs: "step-functions/pass",
-      Succeed: "step-functions/succeed",
-      SucceedArgs: "step-functions/succeed",
-      Wait: "step-functions/wait",
-      WaitArgs: "step-functions/wait",
-      EcsRunTaskArgs: "step-functions/task",
-      EventBridgePutEventsArgs: "step-functions/task",
-      SqsSendMessageArgs: "step-functions/task",
-      SnsPublishArgs: "step-functions/task",
-      LambdaInvokeArgs: "step-functions/task",
-    }[type.name];
-    if (externalModule) {
-      const hash = type.name.endsWith("Args")
+    const fileName = (type.reflection as TypeDoc.DeclarationReflection)
+      ?.sources?.[0].fileName;
+    if (fileName?.startsWith("platform/src/components/")) {
+      const docHash = type.name.endsWith("Args")
         ? `#${type.name.toLowerCase()}`
         : "";
-      return `[<code class="type">${type.name}</code>](/docs/component/aws/${externalModule}/${hash})`;
+      const docLink = fileName.replace(
+        /platform\/src\/components\/(.*)\.ts/,
+        "/docs/component/$1"
+      );
+      return `[<code class="type">${type.name}</code>](${docLink}${docHash})`;
     }
+
+    // types in different doc
     if (type.name === "Resource" || type.name === "Constructor") {
       return `<code class="type">${type.name}</code>`;
     }
@@ -2274,6 +2209,7 @@ async function buildComponents() {
       "../platform/src/components/aws/open-search.ts",
       "../platform/src/components/aws/router.ts",
       "../platform/src/components/aws/service.ts",
+      "../platform/src/components/aws/service-v1.ts",
       "../platform/src/components/aws/sns-topic.ts",
       "../platform/src/components/aws/sns-topic-lambda-subscriber.ts",
       "../platform/src/components/aws/sns-topic-queue-subscriber.ts",
