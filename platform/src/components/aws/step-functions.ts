@@ -28,6 +28,8 @@ import { Wait, WaitArgs } from "./step-functions/wait";
 import { Input } from "../input";
 import { RETENTION } from "./logging";
 import { physicalName } from "../naming";
+import { functionBuilder } from "./helpers/function-builder";
+import { Function } from "./function";
 
 export interface StepFunctionsArgs {
   /**
@@ -82,50 +84,50 @@ export interface StepFunctionsArgs {
   logging?: Input<
     | false
     | {
-      /**
-       * The duration the logs are kept in CloudWatch.
-       *
-       * @default `1 month`
-       * @example
-       * ```js
-       * {
-       *   logging: {
-       *     retention: "forever"
-       *   }
-       * }
-       * ```
-       */
-      retention?: Input<keyof typeof RETENTION>;
-      /**
-       * Specify whether execution data is included in the logs.
-       *
-       * @default `false`
-       * @example
-       * ```js
-       * {
-       *   logging: {
-       *     includeData: true
-       *   }
-       * }
-       * ```
-       */
-      includeData?: Input<boolean>;
-      /**
-       * Specify the type of execution events that are logged. Read more about the
-       * [Step Functions log level](https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html#cloudwatch-log-level).
-       *
-       * @default `"error"`
-       * @example
-       * ```js
-       * {
-       *   logging: {
-       *     level: "all"
-       *   }
-       * }
-       * ```
-       */
-      level?: Input<"all" | "error" | "fatal">;
-    }
+        /**
+         * The duration the logs are kept in CloudWatch.
+         *
+         * @default `1 month`
+         * @example
+         * ```js
+         * {
+         *   logging: {
+         *     retention: "forever"
+         *   }
+         * }
+         * ```
+         */
+        retention?: Input<keyof typeof RETENTION>;
+        /**
+         * Specify whether execution data is included in the logs.
+         *
+         * @default `false`
+         * @example
+         * ```js
+         * {
+         *   logging: {
+         *     includeData: true
+         *   }
+         * }
+         * ```
+         */
+        includeData?: Input<boolean>;
+        /**
+         * Specify the type of execution events that are logged. Read more about the
+         * [Step Functions log level](https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html#cloudwatch-log-level).
+         *
+         * @default `"error"`
+         * @example
+         * ```js
+         * {
+         *   logging: {
+         *     level: "all"
+         *   }
+         * }
+         * ```
+         */
+        level?: Input<"all" | "error" | "fatal">;
+      }
   >;
   /**
    * [Transform](/docs/components#transform) how this component creates its underlying resources.
@@ -522,6 +524,27 @@ export class StepFunctions extends Component implements Link.Linkable {
    *
    * @example
    * ```ts title="sst.config.ts"
+   * sst.aws.StepFunctions.lambdaInvoke({
+   *   name: "LambdaInvoke",
+   *   function: "src/index.handler"
+   * });
+   * ```
+   *
+   * Customize the function.
+   *
+   * ```ts title="sst.config.ts"
+   * sst.aws.StepFunctions.lambdaInvoke({
+   *   name: "LambdaInvoke",
+   *   function: {
+   *     handler: "src/index.handler"
+   *     timeout: "60 seconds",
+   *   }
+   * });
+   * ```
+   *
+   * Pass in an existing `Function` component.
+   *
+   * ```ts title="sst.config.ts"
    * const myLambda = new sst.aws.Function("MyLambda", {
    *   handler: "src/index.handler"
    * });
@@ -531,19 +554,33 @@ export class StepFunctions extends Component implements Link.Linkable {
    *   function: myLambda
    * });
    * ```
+   *
+   * Or pass in the ARN of an existing Lambda function.
+   *
+   * ```ts title="sst.config.ts"
+   * sst.aws.StepFunctions.lambdaInvoke({
+   *   name: "LambdaInvoke",
+   *   function: "arn:aws:lambda:us-east-1:123456789012:function:my-function"
+   * });
+   * ```
    */
   public static lambdaInvoke(args: LambdaInvokeArgs) {
+    const fn =
+      args.function instanceof Function
+        ? args.function
+        : functionBuilder(`${args.name}Function`, args.function, {});
+
     return new Task({
       ...args,
       resource: "arn:aws:states:::lambda:invoke",
       arguments: {
-        FunctionName: args.function.arn,
+        FunctionName: fn.arn,
         Payload: args.payload,
       },
       permissions: [
         {
           actions: ["lambda:InvokeFunction"],
-          resources: [args.function.arn],
+          resources: [fn.arn],
         },
       ],
     });

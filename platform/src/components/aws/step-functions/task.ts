@@ -2,7 +2,12 @@ import { output } from "@pulumi/pulumi";
 import { Duration, toSeconds } from "../../duration";
 import { Input } from "../../input";
 import { Prettify } from "../../component";
-import { Function, FunctionPermissionArgs } from "../function";
+import {
+  Function,
+  FunctionArgs,
+  FunctionArn,
+  FunctionPermissionArgs,
+} from "../function";
 import {
   CatchArgs,
   Failable,
@@ -290,9 +295,9 @@ export class Task extends State implements Nextable, Failable {
 
 export interface LambdaInvokeArgs extends TaskBaseArgs {
   /**
-   * The `Function` component to invoke.
+   * The `Function` to invoke.
    */
-  function: Function;
+  function: Function | Input<string | FunctionArgs | FunctionArn>;
   /**
    * The payload to send to the Lambda function. Values can include outputs from
    * other resources and JSONata expressions.
