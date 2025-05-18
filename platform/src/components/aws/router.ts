@@ -1531,9 +1531,19 @@ async function handler(event) {
           : b.path.length - a.path.length;
       })
       .find(r => {
-        const hostMatches = r.host === "" || new RegExp(r.host).test("^" + requestHost + "$");
-        const pathMatches = event.request.uri.startsWith(r.path);
-        return hostMatches && pathMatches;
+        return (
+          // matching hosts
+          (
+            r.host === "" || (
+            r.host.includes("*")
+              ? new RegExp(r.host).test("^" + requestHost + "$")
+              : r.host.replaceAll("\\\\.", ".") === requestHost
+            )
+          )
+          && 
+          // matching paths
+          event.request.uri.startsWith(r.path)
+        );
       });
 
     // Load metadata
