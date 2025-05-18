@@ -299,7 +299,7 @@ export default $config({
         url: {
           router: {
             instance: router,
-            domain: "api.router.playground.sst.sh/",
+            domain: "api.router.playground.sst.sh",
           },
         },
       });
