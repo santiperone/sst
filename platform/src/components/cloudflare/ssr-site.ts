@@ -218,18 +218,21 @@ export function createRouter(
           },
           transform: {
             worker: (workerArgs) => {
-              workerArgs.kvNamespaceBindings = [
-                {
-                  name: "ASSETS",
-                  namespaceId: storage.id,
-                },
-              ];
-              workerArgs.serviceBindings = [
-                {
-                  name: "SERVER",
-                  service: server.nodes.worker.name,
-                },
-              ];
+              workerArgs.bindings = output(workerArgs.bindings ?? []).apply(
+                (bindings) => [
+                  ...bindings,
+                  {
+                    type: "kv_namespace",
+                    name: "ASSETS",
+                    namespaceId: storage.id,
+                  },
+                  {
+                    type: "service",
+                    name: "SERVER",
+                    service: server.nodes.worker.scriptName,
+                  },
+                ],
+              );
             },
           },
         },
