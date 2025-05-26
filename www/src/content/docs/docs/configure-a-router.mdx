@@ -102,8 +102,8 @@ And use that in our components.
 // Frontend
 const web = new sst.aws.Nextjs("MyWeb", {
   path: "packages/web",
-+  router: {
-+    instance: router
++  route: {
++    router
 +  }
 });
 
@@ -111,8 +111,8 @@ const web = new sst.aws.Nextjs("MyWeb", {
 const api = new sst.aws.Function("MyApi", {
   handler: "packages/functions/api.handler",
 +  url: {
-+    router: {
-+      instance: router,
++    route: {
++      router,
 +      path: "/api"
 +    }
 +  }
@@ -121,8 +121,8 @@ const api = new sst.aws.Function("MyApi", {
 // Docs
 const docs = new sst.aws.Astro("MyDocs", {
   path: "packages/docs",
-+  router: {
-+    instance: router,
++  route: {
++    router,
 +    domain: "docs.example.com"
 +  }
 });
@@ -163,8 +163,8 @@ And update the `MyDocs` component to use this.
 // Docs
 const docs = new sst.aws.Astro("MyDocs", {
   path: "packages/docs",
-  router: {
-    instance: router,
+  route: {
+    router,
 -    domain: "docs.example.com"
 +    domain: `docs.${domain}`
   }
@@ -247,8 +247,8 @@ This will add the `-` for our PR stages. Let's update our `MyDocs` component to 
 // Docs
 const docs = new sst.aws.Astro("MyDocs", {
   path: "packages/docs",
-  router: {
-    instance: router,
+  route: {
+    router,
 -    domain: `docs.${domain}`
 +    domain: subdomain("docs")
   }
@@ -289,17 +289,15 @@ const router = isPermanentStage
 // Frontend
 const web = new sst.aws.Nextjs("MyWeb", {
   path: "packages/web",
-  router: {
-    instance: router
-  }
+  route: { router }
 });
 
 // API
 const api = new sst.aws.Function("MyApi", {
   handler: "packages/functions/api.handler",
   url: {
-    router: {
-      instance: router,
+    route: {
+      router,
       path: "/api"
     }
   }
@@ -308,8 +306,8 @@ const api = new sst.aws.Function("MyApi", {
 // Docs
 const docs = new sst.aws.Astro("MyDocs", {
   path: "packages/docs",
-  router: {
-    instance: router,
+  route: {
+    router,
     domain: subdomain("docs")
   }
 });
