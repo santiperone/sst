@@ -1709,7 +1709,7 @@ async function handler(event) {
   /**
    * Add a route to a destination URL.
    *
-   * @param pattern The path pattern to match for this route.
+   * @param pattern The path prefix to match for this route.
    * @param url The destination URL to route matching requests to.
    * @param args Configure the route.
    *
@@ -1783,7 +1783,7 @@ async function handler(event) {
   /**
    * Add a route to an S3 bucket.
    *
-   * @param pattern The path pattern to match for this route.
+   * @param pattern The path prefix to match for this route.
    * @param bucket The S3 bucket to route matching requests to.
    * @param args Configure the route.
    *
@@ -1865,7 +1865,7 @@ async function handler(event) {
   /**
    * Add a route to a frontend or static site.
    *
-   * @param pattern The path pattern to match for this route.
+   * @param pattern The path prefix to match for this route.
    * @param site The frontend or static site to route matching requests to.
    *
    * @deprecated The `routeSite` function has been deprecated. Set the `route` on the
