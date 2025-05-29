@@ -1717,11 +1717,11 @@ async function handler(event) {
    *
    * You can match a route based on:
    *
-   * - A path like `/api`
+   * - A path prefix like `/api`
    * - A domain pattern like `api.example.com`
    * - A combined pattern like `dev.example.com/api`
    *
-   * For example, to match a path.
+   * For example, to match a path prefix.
    *
    * ```ts title="sst.config.ts"
    * router.route("/api", "https://api.example.com");
@@ -1799,11 +1799,11 @@ async function handler(event) {
    *
    * You can match a pattern and route to it based on:
    *
-   * - A path like `/api`
+   * - A path prefix like `/api`
    * - A domain pattern like `api.example.com`
    * - A combined pattern like `dev.example.com/api`
    *
-   * For example, to match a path.
+   * For example, to match a path prefix.
    *
    * ```ts title="sst.config.ts"
    * router.routeBucket("/files", bucket);
