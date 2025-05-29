@@ -1031,10 +1031,8 @@ export function createTaskDefinition(
             {
               context: { location: contextPath },
               dockerfile: { location: dockerfilePath },
-              buildArgs: linkEnvs.apply((linkEnvs) => ({
-                ...containerImage.args,
-                ...linkEnvs,
-              })),
+              buildArgs: containerImage.args,
+              secrets: linkEnvs,
               target: container.image.target,
               platforms: [container.image.platform],
               tags: [container.name, ...(container.image.tags ?? [])].map(
