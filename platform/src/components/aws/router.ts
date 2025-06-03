@@ -1508,7 +1508,10 @@ async function handler(event) {
 
   async function matchRoute(routes) {
     const requestHost = event.request.headers.host.value;
-    const match = routes
+    const requestHostWithEscapedDots = requestHost.replace(/\\./g, "\\\\.");
+    const requestHostRegexPattern = "^" + requestHost + "$";
+    let match;
+    routes.forEach(r => {
       ${
         /*
         Route format: [type, routeNamespace, hostRegex, pathPrefix]
@@ -1516,41 +1519,45 @@ async function handler(event) {
         - Then sort by path prefix (longest first)
       */ ""
       }
-      .map(r => {
-        var parts = r.split(",");
-        return { 
-          type: parts[0], 
-          routeNs: parts[1], 
-          host: parts[2],
-          path: parts[3]
-        };
-      })
-      .sort((a, b) => {
-        return (a.host.length !== b.host.length)
-          ? b.host.length - a.host.length
-          : b.path.length - a.path.length;
-      })
-      .find(r => {
-        return (
-          // matching hosts
-          (
-            r.host === "" || (
-            r.host.includes("*")
-              ? new RegExp(r.host).test("^" + requestHost + "$")
-              : r.host.replaceAll("\\\\.", ".") === requestHost
-            )
-          )
-          && 
-          // matching paths
-          event.request.uri.startsWith(r.path)
-        );
-      });
+      var parts = r.split(",");
+      const type = parts[0];
+      const routeNs = parts[1];
+      const host = parts[2];
+      const hostLength = host.length;
+      const path = parts[3];
+      const pathLength = path.length;
+
+      // Do not consider if the current match is a better winner
+      if (match && (
+          hostLength < match.hostLength
+          || (hostLength === match.hostLength && pathLength < match.pathLength)
+      )) return;
+
+      const hostMatches = host === ""
+        || host === requestHostWithEscapedDots
+        || (host.includes("*") && new RegExp(host).test(requestHostRegexPattern));
+      if (!hostMatches) return;
+
+      const pathMatches = event.request.uri.startsWith(path);
+      if (!pathMatches) return;
+
+      match = {
+        type,
+        routeNs,
+        host,
+        hostLength,
+        path,
+        pathLength,
+      };
+    });
 
     // Load metadata
     if (match) {
       try {
-        const v = await cf.kvs().get(match.routeNs + ":metadata");
-        return { type: match.type, routeNs: match.routeNs, metadata: JSON.parse(v) };
+        const type = match.type;
+        const routeNs = match.routeNs;
+        const v = await cf.kvs().get(routeNs + ":metadata");
+        return { type, routeNs, metadata: JSON.parse(v) };
       } catch (e) {}
     }
   }
