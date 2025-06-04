@@ -2,15 +2,14 @@ import path from "path";
 import fs from "fs";
 import { Output, output, all, ComponentResourceOptions } from "@pulumi/pulumi";
 import { Input } from "../input.js";
-import { Component, type Transform } from "../component.js";
+import { Component, transform, type Transform } from "../component.js";
 import { VisibleError } from "../error.js";
 import { BaseSsrSiteArgs, buildApp } from "../base/base-ssr-site.js";
-import { KvArgs } from "./kv.js";
-import { Worker } from "./worker.js";
+import { Worker, WorkerArgs } from "./worker.js";
 import { Link } from "../link.js";
 
 export type Plan = {
-  server?: string;
+  server: string;
   assets: string;
 };
 
@@ -22,9 +21,9 @@ export interface SsrSiteArgs extends BaseSsrSiteArgs {
    */
   transform?: {
     /**
-     * Transform the Kv resource used for uploading the assets.
+     * Transform the Worker component used for handling the server-side rendering.
      */
-    assets?: Transform<KvArgs>;
+    server?: Transform<WorkerArgs>;
   };
 }
 
@@ -81,38 +80,33 @@ export abstract class SsrSite extends Component implements Link.Linkable {
       });
     }
 
-    function createWorker() {
-      return new Worker(
-        `${name}Worker`,
-        {
-          handler: all([outputPath, plan.server]).apply(
-            ([outputPath, server]) =>
-              server
-                ? path.join(outputPath, server)
-                : path.join(
-                    $cli.paths.platform,
-                    "functions",
-                    "cf-site-worker",
-                    "index.ts",
-                  ),
-          ),
-          environment: args.environment,
-          link: args.link,
-          url: true,
-          dev: false,
-          domain: args.domain,
-          assets: {
-            directory: all([outputPath, plan.assets]).apply(
-              ([outputPath, assets]) => path.join(outputPath, assets),
-            ),
-          },
-        },
-        { parent: self },
-      );
-    }
-
     function validatePlan(plan: Output<Plan>) {
       return plan;
+    }
+
+    function createWorker() {
+      return new Worker(
+        ...transform(
+          args.transform?.server,
+          `${name}Worker`,
+          {
+            handler: all([outputPath, plan.server]).apply(
+              ([outputPath, server]) => path.join(outputPath, server),
+            ),
+            environment: args.environment,
+            link: args.link,
+            url: true,
+            dev: false,
+            domain: args.domain,
+            assets: {
+              directory: all([outputPath, plan.assets]).apply(
+                ([outputPath, assets]) => path.join(outputPath, assets),
+              ),
+            },
+          },
+          { parent: self },
+        ),
+      );
     }
   }
 

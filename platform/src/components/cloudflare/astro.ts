@@ -1,7 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
 import { ComponentResourceOptions, Output } from "@pulumi/pulumi";
-import { isALtB } from "../../util/compare-semver.js";
 import { VisibleError } from "../error.js";
 import { Plan, SsrSite, SsrSiteArgs } from "./ssr-site.js";
 import { existsAsync } from "../../util/fs.js";
@@ -42,7 +41,7 @@ export interface AstroArgs extends SsrSiteArgs {
    * [Link resources](/docs/linking/) to your Astro site. This will:
    *
    * 1. Grant the permissions needed to access the resources.
-   * 2. Allow you to access it in your site using the [SDK](/docs/reference/sdk/).
+   * 2. Allow you to access it in your site using [`Astro.locals.runtime`](https://docs.astro.build/en/guides/integrations-guide/cloudflare/#environment-variables-and-secrets).
    *
    * @example
    *
@@ -53,12 +52,19 @@ export interface AstroArgs extends SsrSiteArgs {
    *   link: [bucket, stripeKey]
    * }
    * ```
+   *
+   * You can access the linked resources as bindings in your Astro site.
+   *
+   * ```js
+   * const { env } = Astro.locals.runtime;
+   * const files = await env.MyBucket.list();
+   * ```
    */
   link?: SsrSiteArgs["link"];
   /**
    * Set [environment variables](https://docs.astro.build/en/guides/environment-variables/) in your Astro site. These are made available:
    *
-   * 1. In `astro build`, they are loaded into `import.meta.env`.
+   * 1. In `astro build`, they are loaded into [`Astro.locals.runtime`](https://docs.astro.build/en/guides/integrations-guide/cloudflare/#environment-variables-and-secrets).
    * 2. Locally while running `astro dev` through `sst dev`.
    *
    * :::tip
@@ -77,49 +83,24 @@ export interface AstroArgs extends SsrSiteArgs {
    *   }
    * }
    * ```
+   *
+   * You can access the environment variables in your Astro site as follows:
+   *
+   * ```js
+   * const { env } = Astro.locals.runtime;
+   * const apiUrl = env.API_URL;
+   * const stripeKey = env.PUBLIC_STRIPE_PUBLISHABLE_KEY;
+   * ```
    */
   environment?: SsrSiteArgs["environment"];
   /**
    * Set a custom domain for your Astro site.
    *
-   * Automatically manages domains hosted on AWS Route 53, Cloudflare, and Vercel. For other
-   * providers, you'll need to pass in a `cert` that validates domain ownership and add the
-   * DNS records.
-   *
-   * :::tip
-   * Built-in support for AWS Route 53, Cloudflare, and Vercel. And manual setup for other
-   * providers.
-   * :::
-   *
    * @example
    *
-   * By default this assumes the domain is hosted on Route 53.
-   *
    * ```js
    * {
-   *   domain: "example.com"
-   * }
-   * ```
-   *
-   * For domains hosted on Cloudflare.
-   *
-   * ```js
-   * {
-   *   domain: {
-   *     name: "example.com",
-   *     dns: sst.cloudflare.dns()
-   *   }
-   * }
-   * ```
-   *
-   * Specify a `www.` version of the custom domain.
-   *
-   * ```js
-   * {
-   *   domain: {
-   *     name: "domain.com",
-   *     redirects: ["www.domain.com"]
-   *   }
+   *   domain: "my-app.com"
    * }
    * ```
    */
@@ -139,25 +120,10 @@ export interface AstroArgs extends SsrSiteArgs {
    * ```
    */
   buildCommand?: SsrSiteArgs["buildCommand"];
-  /**
-   * Configure how the Astro site assets are uploaded to S3.
-   *
-   * By default, this is set to the following. Read more about these options below.
-   * ```js
-   * {
-   *   assets: {
-   *     textEncoding: "utf-8",
-   *     versionedFilesCacheHeader: "public,max-age=31536000,immutable",
-   *     nonVersionedFilesCacheHeader: "public,max-age=0,s-maxage=86400,stale-while-revalidate=8640"
-   *   }
-   * }
-   * ```
-   */
-  assets?: SsrSiteArgs["assets"];
 }
 
 /**
- * The `Astro` component lets you deploy an [Astro](https://astro.build) site to AWS.
+ * The `Astro` component lets you deploy an [Astro](https://astro.build) site to Cloudflare.
  *
  * @example
  *
@@ -166,7 +132,7 @@ export interface AstroArgs extends SsrSiteArgs {
  * Deploy the Astro site that's in the project root.
  *
  * ```js title="sst.config.ts"
- * new sst.aws.Astro("MyWeb");
+ * new sst.cloudflare.Astro("MyWeb");
  * ```
  *
  * #### Change the path
@@ -174,7 +140,7 @@ export interface AstroArgs extends SsrSiteArgs {
  * Deploys the Astro site in the `my-astro-app/` directory.
  *
  * ```js {2} title="sst.config.ts"
- * new sst.aws.Astro("MyWeb", {
+ * new sst.cloudflare.Astro("MyWeb", {
  *   path: "my-astro-app/"
  * });
  * ```
@@ -184,21 +150,8 @@ export interface AstroArgs extends SsrSiteArgs {
  * Set a custom domain for your Astro site.
  *
  * ```js {2} title="sst.config.ts"
- * new sst.aws.Astro("MyWeb", {
+ * new sst.cloudflare.Astro("MyWeb", {
  *   domain: "my-app.com"
- * });
- * ```
- *
- * #### Redirect www to apex domain
- *
- * Redirect `www.my-app.com` to `my-app.com`.
- *
- * ```js {4} title="sst.config.ts"
- * new sst.aws.Astro("MyWeb", {
- *   domain: {
- *     name: "my-app.com",
- *     redirects: ["www.my-app.com"]
- *   }
  * });
  * ```
  *
@@ -208,21 +161,20 @@ export interface AstroArgs extends SsrSiteArgs {
  * to the resources and allow you to access it in your site.
  *
  * ```ts {4} title="sst.config.ts"
- * const bucket = new sst.aws.Bucket("MyBucket");
+ * const bucket = new sst.cloudflare.Bucket("MyBucket");
  *
- * new sst.aws.Astro("MyWeb", {
+ * new sst.cloudflare.Astro("MyWeb", {
  *   link: [bucket]
  * });
  * ```
  *
- * You can use the [SDK](/docs/reference/sdk/) to access the linked resources
- * in your Astro site.
+ * You can access the linked resources as bindings in your Astro site.
  *
  * ```astro title="src/pages/index.astro"
  * ---
- * import { Resource } from "sst";
+ * const { env } = Astro.locals.runtime;
  *
- * console.log(Resource.MyBucket.name);
+ * const files = await env.MyBucket.list();
  * ---
  * ```
  */

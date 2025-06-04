@@ -4,7 +4,6 @@ import crypto from "crypto";
 import {
   ComponentResourceOptions,
   output,
-  Output,
   all,
   jsonStringify,
   interpolate,
@@ -18,7 +17,7 @@ import type { Input } from "../input.js";
 import { ZoneLookup } from "./providers/zone-lookup.js";
 import { iam } from "@pulumi/aws";
 import { Permission } from "../aws/permission.js";
-import { Binding, binding } from "./binding.js";
+import { binding } from "./binding.js";
 import { DEFAULT_ACCOUNT_ID } from "./account-id.js";
 import { rpc } from "../rpc/rpc.js";
 import { WorkerAssets } from "./providers/worker-assets";
