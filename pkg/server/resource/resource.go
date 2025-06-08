@@ -86,6 +86,7 @@ func Register(ctx context.Context, p *project.Project, r *rpc.Server) error {
 	// Cloudflare Resources
 	r.RegisterName("Resource.Cloudflare.DnsRecord", &CloudflareDnsRecord{cloudflareResource})
 	r.RegisterName("Resource.Cloudflare.WorkerAssets", &WorkerAssets{cloudflareResource})
+	r.RegisterName("Resource.Cloudflare.WorkerScript", &WorkerScript{cloudflareResource})
 
 	// Vercel Resources
 	r.RegisterName("Resource.Vercel.DnsRecord", &VercelDnsRecord{vercelResource})

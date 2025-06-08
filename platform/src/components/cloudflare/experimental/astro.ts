@@ -1,9 +1,9 @@
 import fs from "fs/promises";
 import path from "path";
 import { ComponentResourceOptions, Output } from "@pulumi/pulumi";
-import { VisibleError } from "../error.js";
-import { Plan, SsrSite, SsrSiteArgs } from "./ssr-site.js";
-import { existsAsync } from "../../util/fs.js";
+import { VisibleError } from "../../error.js";
+import { Plan, SsrSite, SsrSiteArgs } from "../ssr-site.js";
+import { existsAsync } from "../../../util/fs.js";
 
 export interface AstroArgs extends SsrSiteArgs {
   /**
