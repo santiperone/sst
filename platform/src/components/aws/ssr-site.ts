@@ -1392,38 +1392,43 @@ async function handler(event) {
           ]).apply(([servers, imageOptimizerUrl]) => {
             const kvEntries: Record<string, string> = {};
             const dirs: string[] = [];
+            // Router append .html and index.html suffixes to requests to s3 routes:
+            // - `.well-known` contain files without suffix, hence will be appended .html
+            // - in the future, it might make sense for each dir to have props that controls
+            //   the suffixes ie. "handleTrailingSlashse"
+            const expandDirs = [".well-known"];
 
             plan.assets.forEach((copy) => {
-              fs.readdirSync(path.join(outputPath, copy.from), {
-                withFileTypes: true,
-              }).forEach((item) => {
-                if (item.isFile()) {
-                  kvEntries[toPosix(path.join("/", item.name))] = "s3";
-                  return;
-                }
-
-                // Handle deep routes
-                // In Next.js, asset requests are prefixed with is /_next/static, and
-                // image optimization requests are prefixed with /_next/image. We cannot
-                // route by 1 level of subdirs (ie. /_next/`), so we need to route by 2
-                // levels of subdirs.
-                if (item.name !== copy.deepRoute) {
-                  dirs.push(toPosix(path.join("/", item.name)));
-                  return;
-                }
-
-                fs.readdirSync(path.join(outputPath, copy.from, item.name), {
-                  withFileTypes: true,
-                }).forEach((subItem) => {
-                  if (subItem.isFile()) {
-                    kvEntries[
-                      toPosix(path.join("/", item.name, subItem.name))
-                    ] = "s3";
-                    return;
-                  }
-                  dirs.push(toPosix(path.join("/", item.name, subItem.name)));
-                });
-              });
+              const processDir = (childPath = "", level = 0) => {
+                const currentPath = path.join(outputPath, copy.from, childPath);
+                fs.readdirSync(currentPath, { withFileTypes: true }).forEach(
+                  (item) => {
+                    // File: add to kvEntries
+                    if (item.isFile()) {
+                      kvEntries[toPosix(path.join("/", childPath, item.name))] =
+                        "s3";
+                      return;
+                    }
+                    // Directory + deep routes: recursively process it
+                    //   In Next.js, asset requests are prefixed with is /_next/static,
+                    //   and image optimization requests are prefixed with /_next/image.
+                    //   We cannot route by 1 level of subdirs (ie. /_next/`), so we need
+                    //   to route by 2 levels of subdirs.
+                    // Directory + expand: recursively process it
+                    if (
+                      level === 0 &&
+                      (expandDirs.includes(item.name) ||
+                        item.name === copy.deepRoute)
+                    ) {
+                      processDir(path.join(childPath, item.name), level + 1);
+                      return;
+                    }
+                    // Directory + NOT expand: add to route
+                    dirs.push(toPosix(path.join("/", childPath, item.name)));
+                  },
+                );
+              };
+              processDir();
             });
 
             kvEntries["metadata"] = JSON.stringify({
