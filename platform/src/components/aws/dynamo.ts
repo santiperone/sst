@@ -416,7 +416,6 @@ export class Dynamo extends Component implements Link.Linkable {
   private constructorName: string;
   private constructorOpts: ComponentResourceOptions;
   private table: Output<dynamodb.Table>;
-  private isStreamEnabled: boolean = false;
 
   constructor(
     name: string,
@@ -430,9 +429,6 @@ export class Dynamo extends Component implements Link.Linkable {
     if (args && "ref" in args) {
       const ref = args as unknown as DynamoRef;
       this.table = output(ref.table);
-      this.table.streamEnabled.apply(streamEnabled => {
-        this.isStreamEnabled = streamEnabled ?? false
-      })
       return;
     }
 
@@ -441,7 +437,6 @@ export class Dynamo extends Component implements Link.Linkable {
     const table = createTable();
 
     this.table = table;
-    this.isStreamEnabled = Boolean(args.stream);
 
     function createTable() {
       return all([
@@ -619,7 +614,7 @@ export class Dynamo extends Component implements Link.Linkable {
     const sourceName = this.constructorName;
 
     // Validate stream is enabled
-    if (!this.isStreamEnabled)
+    if (!this.nodes.table.streamEnabled)
       throw new Error(
         `Cannot subscribe to "${sourceName}" because stream is not enabled.`,
       );
