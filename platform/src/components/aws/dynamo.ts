@@ -430,6 +430,9 @@ export class Dynamo extends Component implements Link.Linkable {
     if (args && "ref" in args) {
       const ref = args as unknown as DynamoRef;
       this.table = output(ref.table);
+      this.table.streamEnabled.apply(streamEnabled => {
+        this.isStreamEnabled = streamEnabled ?? false
+      })
       return;
     }
 
