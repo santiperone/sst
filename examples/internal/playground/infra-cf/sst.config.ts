@@ -32,7 +32,7 @@ export default $config({
     }
 
     function createAstro() {
-      new sst.cloudflare.Astro("MyAstro", {
+      new sst.cloudflare.x.Astro("MyAstro", {
         path: "../sites/astro5",
         link: [bucket],
         environment: {

@@ -55,6 +55,7 @@ export abstract class SsrSite extends Component implements Link.Linkable {
     this.registerOutputs({
       _hint: $dev ? undefined : this.url,
       _dev: {
+        environment: args.environment,
         command: "npm run dev",
         directory: sitePath,
         autostart: true,
