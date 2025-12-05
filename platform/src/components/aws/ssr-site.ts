@@ -902,10 +902,6 @@ async function handler(event) {
         edge: false,
         server: server.arn,
       },
-      _dev: {
-        ...dev.outputs,
-        aws: { role: server.nodes.role.arn },
-      },
     });
 
     function validateDeprecatedProps() {
