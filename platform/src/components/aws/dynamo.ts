@@ -614,11 +614,12 @@ export class Dynamo extends Component implements Link.Linkable {
     const sourceName = this.constructorName;
 
     // Validate stream is enabled
-    if (!this.nodes.table.streamEnabled)
-      throw new Error(
+    if (!this.nodes.table.streamEnabled.apply((streamEnabled) => {
+      if (!streamEnabled) throw new Error(
         `Cannot subscribe to "${sourceName}" because stream is not enabled.`,
       );
-
+    }))
+    
     return isFunctionSubscriber(subscriberOrArgs).apply((v) =>
       v
         ? Dynamo._subscribe(
