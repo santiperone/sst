@@ -613,7 +613,6 @@ export class Dynamo extends Component implements Link.Linkable {
   public subscribe(nameOrSubscriber: any, subscriberOrArgs?: any, args?: any) {
     const sourceName = this.constructorName;
 
-    // Validate stream is enabled
     return all([
       this.nodes.table.streamEnabled,
       isFunctionSubscriber(subscriberOrArgs),
